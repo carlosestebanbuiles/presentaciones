@@ -7,12 +7,17 @@ _sitio:
   subtitulo: Clases y charlas de Endocrinología. Se pueden presentar desde el navegador o descargar en PDF.
   pie: "Contacto: cbuiles@hptu.org.co"
 
-# Ejemplo (borrar o editar):
-# hipotiroidismo-2026:
-#   titulo: Hipotiroidismo en el adulto
+Disruptores_endocrinos_2026:
+  titulo: Disruptores endocrinos en dermatología
+  autor: Carlos Builes
+  descripcion: Cómo interpretar la evidencia para responder en consulta. Simposio Internacional de Dermatología, Medellín 2026 (Pelo, uñas y mucosas).
+
+# Plantilla para las siguientes:
+# nombre-del-archivo-sin-extension:
+#   titulo:
 #   autor: Carlos Builes
 #   fecha: 2026-11-12
-#   descripcion: Clase para residentes de medicina interna. Diagnóstico, tratamiento y seguimiento.
+#   descripcion:
 #   enlaces:
 #     - texto: Guía ATA 2014
 #       url: https://doi.org/10.1089/thy.2014.0028
