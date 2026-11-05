@@ -1,0 +1,60 @@
+name: Publicar presentaciones
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "fuentes/**"
+      - "presentaciones.yml"
+      - "plantillas/**"
+      - "scripts/**"
+      - ".github/workflows/publicar.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Las imágenes ya generadas se guardan en caché por hash del .pptx,
+      # así cada mes solo se convierte la presentación nueva.
+      - name: Recuperar conversiones anteriores
+        uses: actions/cache@v4
+        with:
+          path: sitio
+          key: sitio-${{ hashFiles('fuentes/**') }}
+          restore-keys: sitio-
+
+      - name: Instalar LibreOffice, poppler y fuentes
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libreoffice-impress poppler-utils python3-yaml \
+            fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu fonts-noto-core
+          fc-cache -f
+
+      - name: Construir el sitio
+        run: python3 scripts/construir.py --solo-nuevas
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: sitio
+
+  desplegar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,18 @@
+# Metadatos opcionales de las presentaciones.
+# La clave es el nombre del archivo en fuentes/ sin la extensión.
+# Si una presentación no aparece aquí, se publica igual con el nombre del archivo como título.
+
+_sitio:
+  titulo: Presentaciones
+  subtitulo: Clases y charlas de Endocrinología. Se pueden presentar desde el navegador o descargar en PDF.
+  pie: "Contacto: cbuiles@hptu.org.co"
+
+# Ejemplo (borrar o editar):
+# hipotiroidismo-2026:
+#   titulo: Hipotiroidismo en el adulto
+#   autor: Carlos Builes
+#   fecha: 2026-11-12
+#   descripcion: Clase para residentes de medicina interna. Diagnóstico, tratamiento y seguimiento.
+#   enlaces:
+#     - texto: Guía ATA 2014
+#       url: https://doi.org/10.1089/thy.2014.0028

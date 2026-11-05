@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Presentación</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  #escenario { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; cursor: none; }
+  #escenario.activo { cursor: default; }
+  .diapo { position: absolute; max-width: 100%; max-height: 100%; width: auto; height: auto; aspect-ratio: 16 / 9; object-fit: contain;
+           opacity: 0; transition: opacity .45s ease; user-select: none; -webkit-user-drag: none; }
+  .diapo.visible { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .diapo { transition: none; } }
+
+  #barra { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px; display: flex; gap: 12px; align-items: center;
+           background: linear-gradient(transparent, rgba(0,0,0,.75)); opacity: 0; transition: opacity .3s; }
+  #escenario.activo ~ #barra, #barra:hover { opacity: 1; }
+  #barra button, #barra a { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 8px; padding: 8px 12px;
+                            font-size: 14px; cursor: pointer; text-decoration: none; }
+  #barra button:hover, #barra a:hover { background: rgba(255,255,255,.25); }
+  #contador { margin-left: auto; font-variant-numeric: tabular-nums; opacity: .85; }
+  #progreso { position: fixed; left: 0; bottom: 0; height: 3px; background: #4da3ff; width: 0; transition: width .3s; }
+  #ayuda { position: fixed; top: 14px; right: 16px; font-size: 13px; opacity: .6; transition: opacity 1s; pointer-events: none; }
+  #ayuda.oculta { opacity: 0; }
+</style>
+</head>
+<body>
+<div id="escenario" class="activo"></div>
+<div id="barra">
+  <button id="ant" title="Anterior (←)">◀</button>
+  <button id="sig" title="Siguiente (→ o espacio)">▶</button>
+  <button id="pantalla" title="Pantalla completa (F)">⛶ Pantalla completa</button>
+  <a href="./" title="Volver a la ficha">↩ Ficha</a>
+  <a href="../" title="Todas las presentaciones">☰ Índice</a>
+  <span id="contador"></span>
+</div>
+<div id="progreso"></div>
+<div id="ayuda">← → para avanzar · F pantalla completa · Esc salir</div>
+
+<script>
+(async () => {
+  const escenario = document.getElementById('escenario');
+  const contador = document.getElementById('contador');
+  const progreso = document.getElementById('progreso');
+  const ayuda = document.getElementById('ayuda');
+
+  const info = await fetch('visor.json').then(r => r.json()).catch(() => ({ n: 0 }));
+  const total = info.n || 0;
+  document.title = info.titulo || 'Presentación';
+  const ruta = i => `diapositivas/${String(i).padStart(3, '0')}.jpg`;
+
+  let actual = Math.min(Math.max(parseInt(location.hash.slice(1)) || 1, 1), Math.max(total, 1));
+  let imgVisible = null;
+
+  function precargar(i) { if (i >= 1 && i <= total) { const im = new Image(); im.src = ruta(i); } }
+
+  function mostrar(i, inmediato = false) {
+    if (i < 1 || i > total) return;
+    actual = i;
+    const nueva = document.createElement('img');
+    nueva.className = 'diapo';
+    nueva.src = ruta(i);
+    nueva.alt = `Diapositiva ${i}`;
+    escenario.appendChild(nueva);
+    const anterior = imgVisible;
+    imgVisible = nueva;
+    const activar = () => {
+      requestAnimationFrame(() => nueva.classList.add('visible'));
+      if (anterior) {
+        anterior.classList.remove('visible');
+        setTimeout(() => anterior.remove(), inmediato ? 0 : 500);
+      }
+    };
+    nueva.complete ? activar() : nueva.addEventListener('load', activar, { once: true });
+    contador.textContent = `${i} / ${total}`;
+    progreso.style.width = (100 * i / total) + '%';
+    history.replaceState(null, '', '#' + i);
+    precargar(i + 1); precargar(i + 2); precargar(i - 1);
+  }
+
+  const siguiente = () => mostrar(actual + 1);
+  const anteriorD = () => mostrar(actual - 1);
+  const pantallaCompleta = () => document.fullscreenElement
+      ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {});
+
+  document.getElementById('sig').onclick = siguiente;
+  document.getElementById('ant').onclick = anteriorD;
+  document.getElementById('pantalla').onclick = pantallaCompleta;
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', ' ', 'PageDown', 'Enter', 'n', 'N'].includes(e.key)) { e.preventDefault(); siguiente(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace', 'p', 'P'].includes(e.key)) { e.preventDefault(); anteriorD(); }
+    else if (e.key === 'Home') mostrar(1);
+    else if (e.key === 'End') mostrar(total);
+    else if (e.key === 'f' || e.key === 'F') pantallaCompleta();
+  });
+
+  // Clic: mitad derecha avanza, mitad izquierda retrocede
+  escenario.addEventListener('click', e => (e.clientX > innerWidth / 2 ? siguiente() : anteriorD()));
+
+  // Deslizar en pantallas táctiles
+  let x0 = null;
+  escenario.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  escenario.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 40) (dx < 0 ? siguiente() : anteriorD());
+  });
+
+  // Ocultar cursor y barra tras unos segundos sin mover el ratón
+  let temporizador;
+  const despertar = () => {
+    escenario.classList.add('activo');
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => escenario.classList.remove('activo'), 2500);
+  };
+  document.addEventListener('mousemove', despertar);
+  despertar();
+  setTimeout(() => ayuda.classList.add('oculta'), 5000);
+
+  if (total) mostrar(actual, true);
+  else escenario.textContent = 'No hay diapositivas.';
+})();
+</script>
+</body>
+</html>
