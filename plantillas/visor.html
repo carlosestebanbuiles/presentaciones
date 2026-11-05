@@ -15,7 +15,7 @@
 
   #barra { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px; display: flex; gap: 12px; align-items: center;
            background: linear-gradient(transparent, rgba(0,0,0,.75)); opacity: 0; transition: opacity .3s; }
-  #escenario.activo ~ #barra, #barra:hover { opacity: 1; }
+  #barra.visible, #barra:hover { opacity: 1; }
   #barra button, #barra a { background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 8px; padding: 8px 12px;
                             font-size: 14px; cursor: pointer; text-decoration: none; }
   #barra button:hover, #barra a:hover { background: rgba(255,255,255,.25); }
@@ -124,7 +124,12 @@
     clearTimeout(temporizador);
     temporizador = setTimeout(() => escenario.classList.remove('activo'), 2500);
   };
-  document.addEventListener('mousemove', despertar);
+  // La barra solo aparece con el ratón en el borde inferior (el Spotlight mueve el cursor al señalar)
+  const barra = document.getElementById('barra');
+  document.addEventListener('mousemove', e => {
+    despertar();
+    barra.classList.toggle('visible', e.clientY > innerHeight - 70);
+  });
   despertar();
   setTimeout(() => ayuda.classList.add('oculta'), 5000);
 
