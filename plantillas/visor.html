@@ -36,7 +36,7 @@
   <span id="contador"></span>
 </div>
 <div id="progreso"></div>
-<div id="ayuda">← → para avanzar · F pantalla completa · Esc salir</div>
+<div id="ayuda">← → para avanzar · F pantalla completa · B pantalla en negro · Esc salir</div>
 
 <script>
 (async () => {
@@ -88,12 +88,21 @@
   document.getElementById('ant').onclick = anteriorD;
   document.getElementById('pantalla').onclick = pantallaCompleta;
 
+  // Pantalla en negro (botón "blank" de los presentadores de mano: envía "." o "b")
+  const negro = document.createElement('div');
+  negro.style.cssText = 'position:fixed;inset:0;background:#000;display:none;z-index:5';
+  document.body.appendChild(negro);
+  const alternarNegro = () => { negro.style.display = negro.style.display === 'none' ? 'block' : 'none'; };
+
   document.addEventListener('keydown', e => {
-    if (['ArrowRight', ' ', 'PageDown', 'Enter', 'n', 'N'].includes(e.key)) { e.preventDefault(); siguiente(); }
-    else if (['ArrowLeft', 'PageUp', 'Backspace', 'p', 'P'].includes(e.key)) { e.preventDefault(); anteriorD(); }
+    if (['ArrowRight', ' ', 'PageDown', 'Enter', 'n', 'N', 'ArrowDown'].includes(e.key)) { e.preventDefault(); siguiente(); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace', 'p', 'P', 'ArrowUp'].includes(e.key)) { e.preventDefault(); anteriorD(); }
     else if (e.key === 'Home') mostrar(1);
     else if (e.key === 'End') mostrar(total);
     else if (e.key === 'f' || e.key === 'F') pantallaCompleta();
+    // Botón "iniciar presentación" de los presentadores: envía F5 (o Mayús+F5). En vez de recargar, pantalla completa.
+    else if (e.key === 'F5') { e.preventDefault(); pantallaCompleta(); }
+    else if (['.', 'b', 'B'].includes(e.key)) { e.preventDefault(); alternarNegro(); }
   });
 
   // Clic: mitad derecha avanza, mitad izquierda retrocede

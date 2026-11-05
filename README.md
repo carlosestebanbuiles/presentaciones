@@ -21,7 +21,7 @@ Para quitar una presentación basta con borrar el archivo de `fuentes/`.
 En el índice, el botón **Presentar** abre el visor:
 
 - `→`, espacio o clic en la mitad derecha: siguiente; `←` o clic en la mitad izquierda: anterior.
-- `F`: pantalla completa; `Esc`: salir. En celular o tableta se desliza con el dedo.
+- `F` (o el botón de iniciar del presentador de mano): pantalla completa; `B` o `.`: pantalla en negro; `Esc`: salir. En celular o tableta se desliza con el dedo.
 - La dirección lleva el número de diapositiva (`visor.html#12`), así que se puede compartir un enlace a una diapositiva concreta.
 
 ## Estructura
