@@ -20,14 +20,27 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; color: var(--s
 .boton.primario { background: var(--acento); color: #fff; border-color: var(--acento); }
 .boton.primario:hover { background: var(--acento-oscuro); }
 
+/* Índice: menú de categorías y secciones */
+.menu { max-width: 1100px; margin: 0 auto; padding: 0 20px 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+.menu:empty { display: none; }
+.menu a { text-decoration: none; color: var(--texto); background: var(--tarjeta); border: 1px solid var(--borde);
+          border-radius: 999px; padding: 6px 14px; font-size: .9rem; }
+.menu a:hover { border-color: var(--acento); color: var(--acento); }
+.menu a span { color: var(--suave); margin-left: 4px; }
+.categoria { margin-bottom: 44px; scroll-margin-top: 20px; }
+.categoria h2 { font-size: 1.35rem; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--borde); }
+.subcategoria { font-size: 1rem; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; margin: 22px 0 10px; }
+.subcategoria:first-of-type { margin-top: 0; }
+.rejilla + .subcategoria { margin-top: 26px; }
+
 /* Índice */
 .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
 .tarjeta .portada img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; }
 .tarjeta .texto { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-.tarjeta h2 { margin: 0; font-size: 1.1rem; }
-.tarjeta h2 a { color: inherit; text-decoration: none; }
-.tarjeta h2 a:hover { color: var(--acento); }
+.tarjeta h3 { margin: 0; font-size: 1.1rem; }
+.tarjeta h3 a { color: inherit; text-decoration: none; }
+.tarjeta h3 a:hover { color: var(--acento); }
 .tarjeta .detalles { margin: 0; color: var(--suave); font-size: .9rem; }
 .tarjeta p { margin: 0; font-size: .95rem; }
 .tarjeta .acciones { margin-top: auto; padding-top: 8px; display: flex; gap: 8px; }

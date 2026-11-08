@@ -138,6 +138,7 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
         "fecha": meta.get("fecha"),
         "descripcion": meta.get("descripcion", ""),
         "enlaces": meta.get("enlaces", []),
+        "categoria": meta.get("categoria", "") or "",
         "archivo": fuente.name,
     }
 
@@ -184,21 +185,14 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
     return info
 
 
-def construir_indice(presentaciones: list[dict], config: dict):
-    def clave(p):
-        f = p.get("fecha")
-        return (f.isoformat() if isinstance(f, date) else str(f or "")), p["titulo"]
-
-    presentaciones.sort(key=clave, reverse=True)
-    tarjetas = []
-    for p in presentaciones:
-        portada = f'{p["slug"]}/diapositivas/001.jpg'
-        detalles = " · ".join(x for x in [fecha_legible(p["fecha"]), p["autor"], f'{p["n"]} diapositivas'] if x)
-        tarjetas.append(f"""
+def tarjeta_html(p: dict) -> str:
+    portada = f'{p["slug"]}/diapositivas/001.jpg'
+    detalles = " · ".join(x for x in [fecha_legible(p["fecha"]), p["autor"], f'{p["n"]} diapositivas'] if x)
+    return f"""
       <article class="tarjeta">
         <a href="{p['slug']}/" class="portada"><img src="{portada}" alt="" loading="lazy"></a>
         <div class="texto">
-          <h2><a href="{p['slug']}/">{html.escape(p['titulo'])}</a></h2>
+          <h3><a href="{p['slug']}/">{html.escape(p['titulo'])}</a></h3>
           <p class="detalles">{html.escape(detalles)}</p>
           {f'<p>{html.escape(p["descripcion"])}</p>' if p['descripcion'] else ''}
           <p class="acciones">
@@ -206,14 +200,53 @@ def construir_indice(presentaciones: list[dict], config: dict):
             <a class="boton" href="{p['slug']}/{p['slug']}.pdf">PDF</a>
           </p>
         </div>
-      </article>""")
+      </article>"""
+
+
+def construir_indice(presentaciones: list[dict], config: dict):
+    def clave(p):
+        f = p.get("fecha")
+        return (f.isoformat() if isinstance(f, date) else str(f or "")), p["titulo"]
+
+    presentaciones.sort(key=clave, reverse=True)
+    sin_clasificar = config.get("sin_clasificar", "Sin clasificar")
+
+    # Agrupar: categoría -> subcategoría -> presentaciones. "A / B" = categoría A, subcategoría B.
+    grupos: dict[str, dict[str, list]] = {}
+    for p in presentaciones:
+        partes = [x.strip() for x in p["categoria"].split("/") if x.strip()] or [sin_clasificar]
+        cat, sub = partes[0], " / ".join(partes[1:])
+        grupos.setdefault(cat, {}).setdefault(sub, []).append(p)
+
+    orden = config.get("orden_categorias") or []
+    def orden_cat(c):
+        return (orden.index(c) if c in orden else len(orden), c == sin_clasificar, c.lower())
+    categorias = sorted(grupos, key=orden_cat)
+
+    menu = "".join(f'<a href="#{slugificar(c)}">{html.escape(c)} <span>{sum(len(v) for v in grupos[c].values())}</span></a>'
+                   for c in categorias) if len(categorias) > 1 else ""
+
+    secciones = []
+    for c in categorias:
+        bloques = []
+        for sub in sorted(grupos[c], key=lambda s: (s != "", s.lower())):
+            tarjetas = "\n".join(tarjeta_html(p) for p in grupos[c][sub])
+            encabezado = f'<h3 class="subcategoria">{html.escape(sub)}</h3>' if sub else ""
+            bloques.append(f'{encabezado}<div class="rejilla">{tarjetas}</div>')
+        secciones.append(f"""
+    <section class="categoria" id="{slugificar(c)}">
+      <h2>{html.escape(c)}</h2>
+      {"".join(bloques)}
+    </section>""")
+
     (SITIO / "index.html").write_text(
         renderizar(
             "indice.html",
             titulo=html.escape(config.get("titulo", "Presentaciones")),
             subtitulo=html.escape(config.get("subtitulo", "")),
             pie=config.get("pie", ""),
-            tarjetas="\n".join(tarjetas) or "<p>Aún no hay presentaciones.</p>",
+            menu=menu,
+            secciones="\n".join(secciones) or "<p>Aún no hay presentaciones.</p>",
             total=len(presentaciones),
         ),
         encoding="utf-8",

@@ -6,16 +6,29 @@ _sitio:
   titulo: Presentaciones
   subtitulo: Clases y charlas de Endocrinología. Se pueden presentar desde el navegador o descargar en PDF.
   pie: "Contacto: cbuiles@hptu.org.co"
+  # Orden de las categorías en el índice (las no listadas van después, alfabéticamente)
+  orden_categorias:
+    - Académicas
+    - Industria farmacéutica
+  sin_clasificar: Sin clasificar
 
 Disruptores_endocrinos_2026:
   titulo: Disruptores endocrinos en dermatología
   autor: Carlos Builes
+  categoria: Académicas
   descripcion: Cómo interpretar la evidencia para responder en consulta. Simposio Internacional de Dermatología, Medellín 2026 (Pelo, uñas y mucosas).
+
+Odisea_Cushing_2026:
+  titulo: La odisea del Cushing
+  autor: Natalia Aristizábal-Henao y Carlos Builes
+  categoria: Industria farmacéutica / Recordati
+  descripcion: "Hipercortisolismo: clínica y razonamiento. Programa Ariadne, Recordati Rare Diseases Colombia, 2026."
 
 # Plantilla para las siguientes:
 # nombre-del-archivo-sin-extension:
 #   titulo:
 #   autor: Carlos Builes
+#   categoria: Académicas            # o "Industria farmacéutica / Nombre del laboratorio"
 #   fecha: 2026-11-12
 #   descripcion:
 #   enlaces:
