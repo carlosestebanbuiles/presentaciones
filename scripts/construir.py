@@ -110,6 +110,7 @@ def pdf_a_imagenes(pdf: Path, carpeta: Path) -> list[str]:
 
 def renderizar(plantilla: str, **campos) -> str:
     texto = (PLANTILLAS / plantilla).read_text(encoding="utf-8")
+    campos.setdefault("v", hash_archivo(PLANTILLAS / "estilos.css")[:8])
     for clave, valor in campos.items():
         texto = texto.replace("{{" + clave + "}}", str(valor))
     return texto
