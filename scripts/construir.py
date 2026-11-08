@@ -185,22 +185,96 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
     return info
 
 
-def tarjeta_html(p: dict) -> str:
-    portada = f'{p["slug"]}/diapositivas/001.jpg'
+def tarjeta_html(p: dict, prefijo: str) -> str:
+    """Tarjeta de una presentación. `prefijo` es la ruta relativa hasta la raíz del sitio."""
+    base = f'{prefijo}{p["slug"]}/'
     detalles = " · ".join(x for x in [fecha_legible(p["fecha"]), p["autor"], f'{p["n"]} diapositivas'] if x)
     return f"""
       <article class="tarjeta">
-        <a href="{p['slug']}/" class="portada"><img src="{portada}" alt="" loading="lazy"></a>
+        <a href="{base}" class="portada"><img src="{base}diapositivas/001.jpg" alt="" loading="lazy"></a>
         <div class="texto">
-          <h3><a href="{p['slug']}/">{html.escape(p['titulo'])}</a></h3>
+          <h3><a href="{base}">{html.escape(p['titulo'])}</a></h3>
           <p class="detalles">{html.escape(detalles)}</p>
           {f'<p>{html.escape(p["descripcion"])}</p>' if p['descripcion'] else ''}
           <p class="acciones">
-            <a class="boton primario" href="{p['slug']}/visor.html">Presentar</a>
-            <a class="boton" href="{p['slug']}/{p['slug']}.pdf">PDF</a>
+            <a class="boton primario" href="{base}visor.html">Presentar</a>
+            <a class="boton" href="{base}{p['slug']}.pdf">PDF</a>
           </p>
         </div>
       </article>"""
+
+
+def contar(carpeta: dict) -> int:
+    return len(carpeta["items"]) + sum(contar(s) for s in carpeta["sub"].values())
+
+
+def primera_portada(carpeta: dict):
+    if carpeta["items"]:
+        return carpeta["items"][0]
+    for s in carpeta["sub"].values():
+        p = primera_portada(s)
+        if p:
+            return p
+    return None
+
+
+def tarjeta_carpeta_html(nombre: str, carpeta: dict, prefijo: str) -> str:
+    n = contar(carpeta)
+    portada = primera_portada(carpeta)
+    img = f'<img src="{prefijo}{portada["slug"]}/diapositivas/001.jpg" alt="" loading="lazy">' if portada else ""
+    nsub = len(carpeta["sub"])
+    detalle = f'{n} presentaci{"ón" if n == 1 else "ones"}' + (f' · {nsub} subcategor{"ía" if nsub == 1 else "ías"}' if nsub else "")
+    return f"""
+      <a class="carpeta" href="{slugificar(nombre)}/">
+        <div class="portada">{img}</div>
+        <div class="texto"><h3>{html.escape(nombre)}</h3><p class="detalles">{detalle}</p></div>
+      </a>"""
+
+
+def escribir_carpeta(ruta_nombres: list[str], carpeta: dict, config: dict, orden: list[str], destino: Path, prefijo: str):
+    """Escribe el index.html de una carpeta (raíz, categoría o subcategoría) y recurre a sus subcarpetas."""
+    destino.mkdir(parents=True, exist_ok=True)
+    es_raiz = not ruta_nombres
+    sin_clasificar = config.get("sin_clasificar", "Sin clasificar")
+
+    def orden_sub(nombre):
+        return (orden.index(nombre) if nombre in orden else len(orden), nombre == sin_clasificar, nombre.lower())
+    subnombres = sorted(carpeta["sub"], key=orden_sub)
+
+    migas = [f'<a href="{prefijo}">{html.escape(config.get("titulo", "Presentaciones"))}</a>']
+    for i, nombre in enumerate(ruta_nombres):
+        subida = "../" * (len(ruta_nombres) - 1 - i)
+        migas.append(f'<a href="{subida}">{html.escape(nombre)}</a>' if i < len(ruta_nombres) - 1 else f'<span>{html.escape(nombre)}</span>')
+
+    carpetas_html = "".join(tarjeta_carpeta_html(nombre, carpeta["sub"][nombre], prefijo) for nombre in subnombres)
+    items_html = "".join(tarjeta_html(p, prefijo) for p in carpeta["items"])
+    bloques = []
+    if carpetas_html:
+        bloques.append(f'<section class="rejilla carpetas">{carpetas_html}</section>')
+    if items_html:
+        if carpetas_html:
+            bloques.append('<h2 class="subtitulo-seccion">Presentaciones</h2>')
+        bloques.append(f'<section class="rejilla">{items_html}</section>')
+    if not bloques:
+        bloques.append("<p>Aún no hay presentaciones.</p>")
+
+    titulo_pagina = ruta_nombres[-1] if ruta_nombres else config.get("titulo", "Presentaciones")
+    (destino / "index.html").write_text(
+        renderizar(
+            "indice.html",
+            titulo=html.escape(titulo_pagina),
+            titulo_sitio=html.escape(config.get("titulo", "Presentaciones")),
+            subtitulo=html.escape(config.get("subtitulo", "")) if es_raiz else f'{contar(carpeta)} presentaci{"ón" if contar(carpeta) == 1 else "ones"}',
+            migas="" if es_raiz else '<nav class="migas">' + ' <span class="sep">›</span> '.join(migas) + "</nav>",
+            prefijo=prefijo,
+            contenido="\n".join(bloques),
+            pie=config.get("pie", ""),
+        ),
+        encoding="utf-8",
+    )
+    for nombre in subnombres:
+        escribir_carpeta(ruta_nombres + [nombre], carpeta["sub"][nombre], config, orden,
+                         destino / slugificar(nombre), prefijo + "../")
 
 
 def construir_indice(presentaciones: list[dict], config: dict):
@@ -211,46 +285,43 @@ def construir_indice(presentaciones: list[dict], config: dict):
     presentaciones.sort(key=clave, reverse=True)
     sin_clasificar = config.get("sin_clasificar", "Sin clasificar")
 
-    # Agrupar: categoría -> subcategoría -> presentaciones. "A / B" = categoría A, subcategoría B.
-    grupos: dict[str, dict[str, list]] = {}
+    # Árbol de carpetas: "A / B / C" anida A > B > C. Las presentaciones sin categoría van a "Sin clasificar".
+    raiz = {"sub": {}, "items": []}
     for p in presentaciones:
         partes = [x.strip() for x in p["categoria"].split("/") if x.strip()] or [sin_clasificar]
-        cat, sub = partes[0], " / ".join(partes[1:])
-        grupos.setdefault(cat, {}).setdefault(sub, []).append(p)
+        nodo = raiz
+        for parte in partes:
+            nodo = nodo["sub"].setdefault(parte, {"sub": {}, "items": []})
+        nodo["items"].append(p)
 
+    # Las carpetas viven en sitio/c/<cat>/<sub>/ para no chocar con los slugs de las presentaciones
+    carpeta_c = SITIO / "c"
+    if carpeta_c.exists():
+        shutil.rmtree(carpeta_c)
     orden = config.get("orden_categorias") or []
-    def orden_cat(c):
-        return (orden.index(c) if c in orden else len(orden), c == sin_clasificar, c.lower())
-    categorias = sorted(grupos, key=orden_cat)
-
-    menu = "".join(f'<a href="#{slugificar(c)}">{html.escape(c)} <span>{sum(len(v) for v in grupos[c].values())}</span></a>'
-                   for c in categorias) if len(categorias) > 1 else ""
-
-    secciones = []
-    for c in categorias:
-        bloques = []
-        for sub in sorted(grupos[c], key=lambda s: (s != "", s.lower())):
-            tarjetas = "\n".join(tarjeta_html(p) for p in grupos[c][sub])
-            encabezado = f'<h3 class="subcategoria">{html.escape(sub)}</h3>' if sub else ""
-            bloques.append(f'{encabezado}<div class="rejilla">{tarjetas}</div>')
-        secciones.append(f"""
-    <section class="categoria" id="{slugificar(c)}">
-      <h2>{html.escape(c)}</h2>
-      {"".join(bloques)}
-    </section>""")
-
+    # La raíz se escribe en sitio/index.html, pero sus subcarpetas cuelgan de sitio/c/
+    raiz_destino = SITIO
+    escribir_carpeta([], {"sub": {}, "items": raiz["items"]}, config, orden, raiz_destino, "")
+    # Reescribir la raíz con enlaces a c/<cat>/
+    sub_html = "".join(
+        tarjeta_carpeta_html(n, raiz["sub"][n], "").replace(f'href="{slugificar(n)}/"', f'href="c/{slugificar(n)}/"')
+        for n in sorted(raiz["sub"], key=lambda n: (orden.index(n) if n in orden else len(orden), n == sin_clasificar, n.lower()))
+    )
     (SITIO / "index.html").write_text(
         renderizar(
             "indice.html",
             titulo=html.escape(config.get("titulo", "Presentaciones")),
+            titulo_sitio=html.escape(config.get("titulo", "Presentaciones")),
             subtitulo=html.escape(config.get("subtitulo", "")),
+            migas="",
+            prefijo="",
+            contenido=(f'<section class="rejilla carpetas">{sub_html}</section>' if sub_html else "<p>Aún no hay presentaciones.</p>"),
             pie=config.get("pie", ""),
-            menu=menu,
-            secciones="\n".join(secciones) or "<p>Aún no hay presentaciones.</p>",
-            total=len(presentaciones),
         ),
         encoding="utf-8",
     )
+    for nombre in raiz["sub"]:
+        escribir_carpeta([nombre], raiz["sub"][nombre], config, orden, carpeta_c / slugificar(nombre), "../../")
 
 
 def main():
@@ -275,7 +346,7 @@ def main():
     # Borrar carpetas del sitio cuya fuente ya no existe
     vivos = {p["slug"] for p in presentaciones}
     for carpeta in SITIO.iterdir():
-        if carpeta.is_dir() and carpeta.name not in vivos:
+        if carpeta.is_dir() and carpeta.name not in vivos and carpeta.name != "c":
             shutil.rmtree(carpeta)
             print(f"  - {carpeta.name}: fuente eliminada, carpeta borrada")
 

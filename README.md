@@ -9,7 +9,8 @@ más el PDF y el archivo original para descargar.
 1. Copiar el archivo `.pptx` (o `.pdf`) en la carpeta `fuentes/`.
    El nombre del archivo se usa como título si no se indica otro; conviene algo como `Hipotiroidismo_2026.pptx`.
 2. (Opcional) Agregar título, fecha, autor, categoría, descripción y enlaces en `presentaciones.yml`.
-   La categoría organiza el índice y admite un nivel de subcategoría con `/`, por ejemplo
+   La portada muestra las categorías como carpetas; al entrar se ven sus subcategorías y presentaciones.
+   La categoría admite niveles con `/`, por ejemplo
    `categoria: Académicas` o `categoria: Industria farmacéutica / Recordati`. El orden de las
    categorías se fija en `_sitio.orden_categorias`; las presentaciones sin categoría van en "Sin clasificar".
    Cambiar la categoría de una presentación no cambia su dirección, así que los enlaces siguen valiendo.

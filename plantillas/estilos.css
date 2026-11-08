@@ -20,18 +20,21 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; color: var(--s
 .boton.primario { background: var(--acento); color: #fff; border-color: var(--acento); }
 .boton.primario:hover { background: var(--acento-oscuro); }
 
-/* Índice: menú de categorías y secciones */
-.menu { max-width: 1100px; margin: 0 auto; padding: 0 20px 24px; display: flex; flex-wrap: wrap; gap: 8px; }
-.menu:empty { display: none; }
-.menu a { text-decoration: none; color: var(--texto); background: var(--tarjeta); border: 1px solid var(--borde);
-          border-radius: 999px; padding: 6px 14px; font-size: .9rem; }
-.menu a:hover { border-color: var(--acento); color: var(--acento); }
-.menu a span { color: var(--suave); margin-left: 4px; }
-.categoria { margin-bottom: 44px; scroll-margin-top: 20px; }
-.categoria h2 { font-size: 1.35rem; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--borde); }
-.subcategoria { font-size: 1rem; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; margin: 22px 0 10px; }
-.subcategoria:first-of-type { margin-top: 0; }
-.rejilla + .subcategoria { margin-top: 26px; }
+/* Carpetas (categorías) y migas de pan */
+.migas { color: var(--suave); font-size: .92rem; margin-bottom: 10px; }
+.migas a { color: var(--suave); text-decoration: none; }
+.migas a:hover { color: var(--acento); }
+.migas .sep { margin: 0 4px; opacity: .6; }
+.carpeta { display: flex; flex-direction: column; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px;
+           overflow: hidden; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; }
+.carpeta:hover { border-color: var(--acento); transform: translateY(-2px); }
+.carpeta .portada { aspect-ratio: 16 / 9; background: var(--borde); position: relative; }
+.carpeta .portada img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.85); }
+.carpeta .portada::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 55%, rgba(0,0,0,.35)); }
+.carpeta .texto { padding: 14px 16px 16px; }
+.carpeta h3 { margin: 0 0 4px; font-size: 1.15rem; }
+.carpeta .detalles { margin: 0; color: var(--suave); font-size: .9rem; }
+.subtitulo-seccion { font-size: 1.1rem; color: var(--suave); margin: 32px 0 12px; text-transform: uppercase; letter-spacing: .04em; }
 
 /* Índice */
 .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
