@@ -24,6 +24,20 @@
   #ayuda { position: fixed; top: 14px; right: 16px; font-size: 13px; opacity: .6; transition: opacity 1s; pointer-events: none; }
   #ayuda.oculta { opacity: 0; }
 
+  /* Enlaces del PowerPoint sobre la diapositiva */
+  #capaEnlaces { position: fixed; pointer-events: none; z-index: 2; }
+  #capaEnlaces a { position: absolute; pointer-events: auto; border-radius: 4px; cursor: pointer;
+                   outline: 2px solid transparent; transition: outline-color .15s, background .15s; }
+  #capaEnlaces a:hover, #capaEnlaces a:focus-visible { outline-color: rgba(77,163,255,.9); background: rgba(77,163,255,.12); }
+  #botonEnlaces[hidden] { display: none; }
+  #listaEnlaces { position: fixed; bottom: 58px; left: 16px; max-width: min(520px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto;
+                  background: rgba(14,16,20,.96); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 8px; z-index: 11;
+                  box-shadow: 0 8px 30px rgba(0,0,0,.5); font-size: 14px; }
+  #listaEnlaces a { display: block; color: #cfe4ff; text-decoration: none; padding: 8px 10px; border-radius: 6px;
+                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #listaEnlaces a:hover { background: rgba(255,255,255,.08); color: #fff; }
+  #listaEnlaces small { display: block; color: #8a94a3; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+
   /* Menú lateral de diapositivas (M para abrir/cerrar) */
   #menu { position: fixed; top: 0; left: 0; bottom: 0; width: 250px; z-index: 10; overflow-y: auto; overscroll-behavior: contain;
           background: rgba(14, 16, 20, .94); backdrop-filter: blur(6px); box-shadow: 4px 0 24px rgba(0,0,0,.45);
@@ -48,6 +62,8 @@
 </head>
 <body>
 <div id="escenario" class="activo"></div>
+<div id="capaEnlaces"></div>
+<div id="listaEnlaces" hidden></div>
 <nav id="menu" aria-label="Diapositivas">
   <div class="cab"><span>Diapositivas</span><button id="cerrarMenu" title="Cerrar (M)">×</button></div>
   <div id="listaMenu"></div>
@@ -56,6 +72,7 @@
   <button id="botonMenu" title="Menú de diapositivas (M)">☰ Diapositivas</button>
   <button id="ant" title="Anterior (←)">◀</button>
   <button id="sig" title="Siguiente (→ o espacio)">▶</button>
+  <button id="botonEnlaces" title="Enlaces de esta diapositiva (L)" hidden>🔗 Enlaces</button>
   <button id="pantalla" title="Pantalla completa (F)">⛶ Pantalla completa</button>
   <a href="./" title="Volver a la ficha">↩ Ficha</a>
   <a href="../" title="Todas las presentaciones">⌂ Índice</a>
@@ -121,6 +138,57 @@
   document.getElementById('botonMenu').onclick = alternarMenu;
   document.getElementById('cerrarMenu').onclick = () => abrirMenu(false);
 
+  // ---- Enlaces del PowerPoint ----
+  const capa = document.getElementById('capaEnlaces');
+  const lista2 = document.getElementById('listaEnlaces');
+  const botonEnlaces = document.getElementById('botonEnlaces');
+  const enlaces = info.enlaces || {};
+  const abrirEnlace = e => {
+    if (e.ir) { mostrar(e.ir); return; }
+    window.open(e.url, '_blank', 'noopener');
+  };
+  function ubicarCapa() {
+    const img = imgVisible;
+    if (!img) return;
+    const r = img.getBoundingClientRect();
+    Object.assign(capa.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  }
+  function pintarEnlaces(i) {
+    capa.innerHTML = '';
+    lista2.innerHTML = '';
+    lista2.hidden = true;
+    const propios = enlaces[i] || enlaces[String(i)] || [];
+    botonEnlaces.hidden = propios.length === 0;
+    botonEnlaces.textContent = propios.length > 1 ? `🔗 Enlaces (${propios.length})` : '🔗 Enlace';
+    for (const e of propios) {
+      const destino = e.ir ? `#${e.ir}` : e.url;
+      if (e.caja) {
+        const a = document.createElement('a');
+        a.href = destino;
+        if (!e.ir) { a.target = '_blank'; a.rel = 'noopener'; }
+        a.title = e.ir ? `Ir a la diapositiva ${e.ir}` : e.url;
+        const [x, y, w, h] = e.caja;
+        Object.assign(a.style, { left: x * 100 + '%', top: y * 100 + '%', width: w * 100 + '%', height: h * 100 + '%' });
+        a.addEventListener('click', ev => { ev.stopPropagation(); if (e.ir) { ev.preventDefault(); mostrar(e.ir); } });
+        capa.appendChild(a);
+      }
+      const item = document.createElement('a');
+      item.href = destino;
+      item.innerHTML = `<span></span><small></small>`;
+      item.querySelector('span').textContent = e.texto || e.url || `Diapositiva ${e.ir}`;
+      item.querySelector('small').textContent = e.ir ? `Ir a la diapositiva ${e.ir}` : e.url;
+      item.addEventListener('click', ev => { ev.preventDefault(); lista2.hidden = true; abrirEnlace(e); });
+      lista2.appendChild(item);
+    }
+    requestAnimationFrame(ubicarCapa);
+  }
+  botonEnlaces.onclick = ev => { ev.stopPropagation(); lista2.hidden = !lista2.hidden; };
+  document.addEventListener('click', ev => {
+    if (!lista2.hidden && !lista2.contains(ev.target) && ev.target !== botonEnlaces) lista2.hidden = true;
+  }, true);
+  addEventListener('resize', ubicarCapa);
+  document.addEventListener('fullscreenchange', () => setTimeout(ubicarCapa, 100));
+
   function precargar(i) { if (i >= 1 && i <= total) { const im = new Image(); im.src = ruta(i); } }
 
   function mostrar(i, inmediato = false) {
@@ -141,6 +209,8 @@
       }
     };
     nueva.complete ? activar() : nueva.addEventListener('load', activar, { once: true });
+    nueva.addEventListener('load', ubicarCapa, { once: true });
+    pintarEnlaces(i);
     contador.textContent = `${i} / ${total}`;
     marcarEnMenu(i);
     progreso.style.width = (100 * i / total) + '%';
@@ -173,6 +243,7 @@
     else if (e.key === 'F5') { e.preventDefault(); pantallaCompleta(); }
     else if (['.', 'b', 'B'].includes(e.key)) { e.preventDefault(); alternarNegro(); }
     else if (e.key === 'm' || e.key === 'M') { e.preventDefault(); alternarMenu(); }
+    else if ((e.key === 'l' || e.key === 'L') && !botonEnlaces.hidden) { e.preventDefault(); lista2.hidden = !lista2.hidden; }
     else if (e.key === 'Escape' && menu.classList.contains('abierto')) abrirMenu(false);
   });
 
@@ -203,6 +274,12 @@
   });
   despertar();
   setTimeout(() => ayuda.classList.add('oculta'), 5000);
+
+  // Cambiar el número tras # en la dirección lleva a esa diapositiva
+  addEventListener('hashchange', () => {
+    const i = parseInt(location.hash.slice(1));
+    if (i && i !== actual) mostrar(Math.min(Math.max(i, 1), total));
+  });
 
   if (total) mostrar(actual, true);
   else escenario.textContent = 'No hay diapositivas.';

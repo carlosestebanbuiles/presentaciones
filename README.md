@@ -32,6 +32,9 @@ En el índice, el botón **Presentar** abre el visor:
   Si la presentación tiene secciones de PowerPoint (clic derecho en el panel de miniaturas > Agregar sección),
   aparecen como encabezados del menú y se puede saltar a cada una. También se pueden definir en
   `presentaciones.yml` con `secciones: [{titulo: "Eje 1", desde: 18}, ...]`.
+- Enlaces: si el PowerPoint tiene hipervínculos (en una forma, una imagen o un texto), quedan clicables en el
+  mismo lugar de la diapositiva y se abren en otra pestaña; `L` o el botón **🔗 Enlaces** los lista. Los saltos
+  a otra diapositiva también funcionan. La ficha muestra todos los enlaces con su número de diapositiva.
 - La dirección lleva el número de diapositiva (`visor.html#12`), así que se puede compartir un enlace a una diapositiva concreta.
 
 ## Presentar sin internet

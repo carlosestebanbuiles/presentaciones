@@ -130,6 +130,120 @@ def generar_miniaturas(carpeta: Path, forzar: bool = False) -> None:
             sobrante.unlink()
 
 
+def indices_visibles(pptx: Path) -> dict[int, int | None]:
+    """Número de diapositiva en el .pptx (base 1) -> número en el sitio, o None si está oculta.
+    LibreOffice no exporta las diapositivas ocultas, así que el sitio solo cuenta las visibles."""
+    try:
+        from pptx import Presentation
+        prs = Presentation(str(pptx))
+    except Exception:
+        return {}
+    mapa, n = {}, 0
+    for i, s in enumerate(prs.slides, 1):
+        if s._element.get("show") == "0":
+            mapa[i] = None
+        else:
+            n += 1
+            mapa[i] = n
+    return mapa
+
+
+def leer_enlaces(pptx: Path) -> dict[int, list[dict]]:
+    """Hipervínculos del .pptx por diapositiva (numeración del sitio).
+    Cada enlace: {url | ir, texto, caja: [x, y, ancho, alto] en fracción de la diapositiva, o None}.
+    - Forma o imagen con acción de clic: caja = la forma.
+    - Texto: si el texto enlazado ocupa casi todo el cuadro, caja = el cuadro; si es parte de un párrafo
+      más largo (una referencia, por ejemplo), solo se lista, para no volver clicable todo el cuadro.
+    - Saltos a otra diapositiva: {ir: número}."""
+    try:
+        from pptx import Presentation
+        from pptx.enum.action import PP_ACTION
+        from pptx.oxml.ns import qn
+        prs = Presentation(str(pptx))
+    except Exception:
+        return {}
+    W, H = prs.slide_width or 1, prs.slide_height or 1
+    visibles = indices_visibles(pptx)
+    id_a_numero = {s.slide_id: i for i, s in enumerate(prs.slides, 1)}
+    valido = re.compile(r"^(https?://|mailto:)", re.I)
+
+    def caja_de(x, y, w, h):
+        if None in (x, y, w, h) or w <= 0 or h <= 0:
+            return None
+        return [round(x / W, 4), round(y / H, 4), round(w / W, 4), round(h / H, 4)]
+
+    def recorrer(formas, transformar, salida):
+        for sh in formas:
+            x, y, w, h = sh.left, sh.top, sh.width, sh.height
+            if None not in (x, y, w, h):
+                x, y, w, h = transformar(x, y, w, h)
+            if sh.shape_type == 6:  # grupo: las coordenadas de los hijos están en el espacio del grupo
+                xfrm = sh._element.grpSpPr.find(qn("a:xfrm"))
+                choff = xfrm.find(qn("a:chOff")) if xfrm is not None else None
+                chext = xfrm.find(qn("a:chExt")) if xfrm is not None else None
+                if choff is not None and chext is not None and int(chext.get("cx")) and int(chext.get("cy")):
+                    cx0, cy0 = int(choff.get("x")), int(choff.get("y"))
+                    sx, sy = w / int(chext.get("cx")), h / int(chext.get("cy"))
+                    def t_hijo(a, b, c, d, x=x, y=y, cx0=cx0, cy0=cy0, sx=sx, sy=sy):
+                        return x + (a - cx0) * sx, y + (b - cy0) * sy, c * sx, d * sy
+                else:
+                    t_hijo = transformar
+                recorrer(sh.shapes, t_hijo, salida)
+                continue
+            texto_forma = sh.text_frame.text.strip() if getattr(sh, "has_text_frame", False) and sh.has_text_frame else ""
+            # Acción de clic sobre la forma completa
+            url, destino = None, None
+            try:
+                accion = sh.click_action
+                if accion.action == PP_ACTION.NAMED_SLIDE:
+                    destino = accion.target_slide
+                else:
+                    url = accion.hyperlink.address
+            except Exception:
+                pass
+            if url and valido.match(url):
+                salida.append({"url": url, "texto": texto_forma[:120] or url, "caja": caja_de(x, y, w, h)})
+            elif destino is not None:
+                n = visibles.get(id_a_numero.get(destino.slide_id))
+                if n:
+                    salida.append({"ir": n, "texto": texto_forma[:120] or f"Diapositiva {n}", "caja": caja_de(x, y, w, h)})
+            # Enlaces en el texto
+            if texto_forma:
+                por_url = {}
+                for par in sh.text_frame.paragraphs:
+                    for r in par.runs:
+                        try:
+                            u = r.hyperlink.address
+                        except Exception:
+                            u = None
+                        if u and valido.match(u):
+                            por_url.setdefault(u, []).append(r.text)
+                total = len(re.sub(r"\s", "", texto_forma)) or 1
+                for u, trozos in por_url.items():
+                    enlazado = "".join(trozos).strip()
+                    ocupa = len(re.sub(r"\s", "", enlazado)) / total
+                    caja = caja_de(x, y, w, h) if (len(por_url) == 1 and ocupa >= 0.6) else None
+                    salida.append({"url": u, "texto": enlazado[:120] or u, "caja": caja})
+
+    resultado = {}
+    for i, s in enumerate(prs.slides, 1):
+        n = visibles.get(i)
+        if not n:
+            continue
+        lista = []
+        recorrer(s.shapes, lambda a, b, c, d: (a, b, c, d), lista)
+        # quitar duplicados exactos
+        vistos, unicos = set(), []
+        for e in lista:
+            clave = (e.get("url"), e.get("ir"), tuple(e["caja"]) if e.get("caja") else None)
+            if clave not in vistos:
+                vistos.add(clave)
+                unicos.append(e)
+        if unicos:
+            resultado[n] = unicos
+    return resultado
+
+
 def leer_secciones(pptx: Path) -> list[dict]:
     """Secciones de PowerPoint (clic derecho > Agregar sección) como [{titulo, desde}] con desde en base 1."""
     import zipfile
@@ -141,7 +255,9 @@ def leer_secciones(pptx: Path) -> list[dict]:
     lista = re.search(r"<p:sldIdLst>(.*?)</p:sldIdLst>", xml, re.S)
     if not lista:
         return []
-    orden = {sid: i + 1 for i, sid in enumerate(re.findall(r'<p:sldId [^>]*id="(\d+)"', lista.group(1)))}
+    ids_ordenados = re.findall(r'<p:sldId [^>]*id="(\d+)"', lista.group(1))
+    visibles = indices_visibles(pptx)
+    orden = {sid: visibles[i + 1] for i, sid in enumerate(ids_ordenados) if visibles.get(i + 1)}
     secciones = []
     for nombre, cuerpo in re.findall(r'<p14:section [^>]*name="([^"]*)"[^>]*>(.*?)</p14:section>', xml, re.S):
         ids = [orden[s] for s in re.findall(r'<p14:sldId id="(\d+)"', cuerpo) if s in orden]
@@ -215,23 +331,36 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
     info["secciones"] = meta.get("secciones") or (leer_secciones(fuente) if fuente.suffix.lower() == ".pptx" else [])
 
     descargable = f"{slug}{fuente.suffix.lower()}" if fuente.suffix.lower() != ".pdf" else ""
-    enlaces_html = "".join(
-        f'<li><a href="{html.escape(e["url"])}" target="_blank" rel="noopener">{html.escape(e.get("texto", e["url"]))}</a></li>'
-        for e in info["enlaces"]
-    )
+    # Enlaces del PowerPoint, por diapositiva (para el visor y para la ficha)
+    info["enlaces_pptx"] = leer_enlaces(fuente) if fuente.suffix.lower() == ".pptx" else {}
+    items, vistos = [], set()
+    for e in info["enlaces"]:  # los de presentaciones.yml, primero
+        if e.get("url") and e["url"] not in vistos:
+            vistos.add(e["url"])
+            items.append(f'<li><a href="{html.escape(e["url"])}" target="_blank" rel="noopener">'
+                         f'{html.escape(e.get("texto", e["url"]))}</a></li>')
+    for n in sorted(info["enlaces_pptx"]):
+        for e in info["enlaces_pptx"][n]:
+            if not e.get("url") or e["url"] in vistos:
+                continue
+            vistos.add(e["url"])
+            texto = e["texto"] if e["texto"] != e["url"] else re.sub(r"^https?://(www\.)?", "", e["url"])
+            items.append(f'<li><a href="{html.escape(e["url"])}" target="_blank" rel="noopener">{html.escape(texto)}</a>'
+                         f' <a class="en-diapo" href="visor.html#{n}">diapositiva {n}</a></li>')
+    enlaces_html = "".join(items)
+    detalles = " · ".join(x for x in [fecha_legible(info["fecha"]), info["autor"], f'{info["n"]} diapositivas'] if x)
     (carpeta / "index.html").write_text(
         renderizar(
             "presentacion.html",
             titulo=html.escape(titulo),
-            autor=html.escape(info["autor"]),
-            fecha=html.escape(fecha_legible(info["fecha"])),
+            detalles=html.escape(detalles),
             descripcion=html.escape(info["descripcion"]),
             n=info["n"],
             v=info["v"],
             pdf=f"{slug}.pdf",
             pptx=descargable,
             boton_pptx=(f'<a class="boton" href="{descargable}" download>Descargar PowerPoint</a>' if descargable else ""),
-            enlaces=(f"<h2>Enlaces</h2><ul>{enlaces_html}</ul>" if enlaces_html else ""),
+            enlaces=(f'<h2>Enlaces</h2><ul class="lista-enlaces">{enlaces_html}</ul>' if enlaces_html else ""),
         ),
         encoding="utf-8",
     )
@@ -464,7 +593,8 @@ def main():
     for p in presentaciones:
         shutil.copy2(PLANTILLAS / "visor.html", SITIO / p["slug"] / "visor.html")
         (SITIO / p["slug"] / "visor.json").write_text(
-            json.dumps({"titulo": p["titulo"], "n": p["n"], "v": p["v"], "secciones": p.get("secciones", [])}, ensure_ascii=False)
+            json.dumps({"titulo": p["titulo"], "n": p["n"], "v": p["v"], "secciones": p.get("secciones", []),
+                        "enlaces": p.get("enlaces_pptx", {})}, ensure_ascii=False)
         )
     shutil.copy2(PLANTILLAS / "estilos.css", SITIO / "estilos.css")
     shutil.copy2(PLANTILLAS / "sw.js", SITIO / "sw.js")
