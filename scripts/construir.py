@@ -156,7 +156,7 @@ def leer_secciones(pptx: Path) -> list[dict]:
 
 def renderizar(plantilla: str, **campos) -> str:
     texto = (PLANTILLAS / plantilla).read_text(encoding="utf-8")
-    campos.setdefault("v", hash_archivo(PLANTILLAS / "estilos.css")[:8])
+    campos["vcss"] = hash_archivo(PLANTILLAS / "estilos.css")[:8]
     for clave, valor in campos.items():
         texto = texto.replace("{{" + clave + "}}", str(valor))
     return texto
@@ -467,6 +467,7 @@ def main():
             json.dumps({"titulo": p["titulo"], "n": p["n"], "v": p["v"], "secciones": p.get("secciones", [])}, ensure_ascii=False)
         )
     shutil.copy2(PLANTILLAS / "estilos.css", SITIO / "estilos.css")
+    shutil.copy2(PLANTILLAS / "sw.js", SITIO / "sw.js")
     (SITIO / ".nojekyll").touch()
     construir_indice(presentaciones, config)
     print(f"Listo: {len(presentaciones)} presentaciones en {SITIO}")

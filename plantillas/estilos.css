@@ -73,3 +73,10 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; color: var(--s
 .buscador input:focus { border-color: var(--acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 20%, transparent); }
 .sin-resultados { color: var(--suave); }
 [hidden] { display: none !important; }
+
+/* Guardar para usar sin conexión */
+.sin-conexion { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: -6px 0 18px; font-size: .9rem; color: var(--suave); }
+.sin-conexion .boton { cursor: pointer; font: inherit; font-size: .9rem; }
+.sin-conexion .boton:disabled { opacity: .8; cursor: progress; }
+.sin-conexion .boton.guardada { border-color: #2e9e5b; color: #2e9e5b; cursor: default; }
+.sin-conexion a { color: var(--suave); }

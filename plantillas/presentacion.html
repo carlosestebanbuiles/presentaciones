@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{titulo}}</title>
-<link rel="stylesheet" href="../estilos.css?v={{v}}">
+<link rel="stylesheet" href="../estilos.css?v={{vcss}}">
 </head>
 <body>
 <main>
@@ -23,9 +23,79 @@
         <a class="boton" href="{{pdf}}">Ver PDF</a>
         {{boton_pptx}}
       </p>
+      <div id="sinConexion" class="sin-conexion" hidden>
+        <button id="guardar" class="boton">⤓ Guardar para usar sin conexión</button>
+        <span id="estadoGuardado"></span>
+      </div>
       {{enlaces}}
     </div>
   </div>
 </main>
+<script>
+(async () => {
+  if (!('serviceWorker' in navigator) || !('caches' in window)) return;
+  try { await navigator.serviceWorker.register('../sw.js'); } catch (e) { return; }
+  const caja = document.getElementById('sinConexion');
+  const boton = document.getElementById('guardar');
+  const estado = document.getElementById('estadoGuardado');
+  const CACHE = 'presentaciones-v1';
+  let info;
+  try { info = await fetch('visor.json', { cache: 'no-cache' }).then(r => r.json()); } catch (e) { return; }
+  const q = info.v ? `?v=${info.v}` : '';
+  const num = i => String(i).padStart(3, '0');
+  const css = document.querySelector('link[rel=stylesheet]').href;
+  const urls = ['./', 'visor.html', 'visor.json', '../', css];
+  for (let i = 1; i <= info.n; i++) urls.push(`diapositivas/${num(i)}.jpg${q}`, `diapositivas/m/${num(i)}.jpg${q}`);
+  const absolutas = urls.map(u => new URL(u, location.href).href);
+
+  async function faltantes() {
+    const c = await caches.open(CACHE);
+    const r = await Promise.all(absolutas.map(async u => (await c.match(u)) ? null : u));
+    return r.filter(Boolean);
+  }
+  function mostrarGuardada() {
+    boton.textContent = '✓ Disponible sin conexión';
+    boton.classList.add('guardada');
+    estado.innerHTML = '<a href="#" id="quitar">Quitar</a>';
+    document.getElementById('quitar').onclick = async ev => {
+      ev.preventDefault();
+      const c = await caches.open(CACHE);
+      await Promise.all(absolutas.filter(u => u.includes('/diapositivas/')).map(u => c.delete(u)));
+      boton.textContent = '⤓ Guardar para usar sin conexión';
+      boton.classList.remove('guardada'); estado.textContent = '';
+    };
+  }
+  caja.hidden = false;
+  if ((await faltantes()).length === 0) mostrarGuardada();
+
+  boton.onclick = async () => {
+    if (boton.classList.contains('guardada') || boton.disabled) return;
+    boton.disabled = true;
+    const c = await caches.open(CACHE);
+    const pendientes = await faltantes();
+    let hechas = 0, fallidas = 0;
+    const total = pendientes.length;
+    async function trabajador() {
+      while (pendientes.length) {
+        const u = pendientes.shift();
+        try {
+          const r = await fetch(u, { cache: 'no-cache' });
+          if (r.ok) await c.put(u, r); else fallidas++;
+        } catch (e) { fallidas++; }
+        hechas++;
+        boton.textContent = `Guardando… ${Math.round(100 * hechas / total)} %`;
+      }
+    }
+    await Promise.all([trabajador(), trabajador(), trabajador(), trabajador()]);
+    boton.disabled = false;
+    if (fallidas) {
+      boton.textContent = '⤓ Reintentar';
+      estado.textContent = `No se pudieron guardar ${fallidas} archivos. Revisa la conexión.`;
+    } else {
+      mostrarGuardada();
+    }
+  };
+})();
+</script>
 </body>
 </html>

@@ -34,6 +34,14 @@ En el índice, el botón **Presentar** abre el visor:
   `presentaciones.yml` con `secciones: [{titulo: "Eje 1", desde: 18}, ...]`.
 - La dirección lleva el número de diapositiva (`visor.html#12`), así que se puede compartir un enlace a una diapositiva concreta.
 
+## Presentar sin internet
+
+En la ficha de cada presentación, **Guardar para usar sin conexión** descarga las diapositivas y el visor
+al navegador de ese dispositivo (un service worker, `sw.js`). Después se puede presentar aunque falle el wifi.
+Conviene hacerlo en el computador desde el que se va a presentar, con el mismo navegador. Si la presentación
+se actualiza, la versión guardada deja de coincidir y el botón vuelve a ofrecer guardarla. Las presentaciones
+que se abren con conexión también quedan guardadas en parte (las diapositivas vistas).
+
 ## Estructura
 
 ```

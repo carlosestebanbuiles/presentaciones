@@ -207,6 +207,7 @@
   if (total) mostrar(actual, true);
   else escenario.textContent = 'No hay diapositivas.';
 })();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
 </script>
 </body>
 </html>
