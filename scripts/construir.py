@@ -90,6 +90,8 @@ def pdf_a_imagenes(pdf: Path, carpeta: Path) -> list[str]:
     carpeta.mkdir(parents=True, exist_ok=True)
     for viejo in carpeta.glob("*.jpg"):
         viejo.unlink()
+    if (carpeta / "m").exists():
+        shutil.rmtree(carpeta / "m")  # miniaturas viejas: se regeneran después
     subprocess.run(
         [
             "pdftoppm", "-jpeg", "-jpegopt", f"quality={CALIDAD_JPG}",
@@ -106,6 +108,50 @@ def pdf_a_imagenes(pdf: Path, carpeta: Path) -> list[str]:
         img.rename(nuevo)
         nombres.append(nuevo.name)
     return nombres
+
+
+ANCHO_MINI = 320  # ancho de las miniaturas del menú lateral
+
+
+def generar_miniaturas(carpeta: Path, forzar: bool = False) -> None:
+    """Crea diapositivas/m/NNN.jpg (miniaturas) a partir de las imágenes grandes."""
+    from PIL import Image
+    mini = carpeta / "m"
+    mini.mkdir(exist_ok=True)
+    for img in sorted(carpeta.glob("[0-9][0-9][0-9].jpg")):
+        destino = mini / img.name
+        if destino.exists() and not forzar:
+            continue
+        with Image.open(img) as im:
+            alto = round(im.height * ANCHO_MINI / im.width)
+            im.convert("RGB").resize((ANCHO_MINI, alto), Image.LANCZOS).save(destino, "JPEG", quality=80)
+    for sobrante in mini.glob("*.jpg"):
+        if not (carpeta / sobrante.name).exists():
+            sobrante.unlink()
+
+
+def leer_secciones(pptx: Path) -> list[dict]:
+    """Secciones de PowerPoint (clic derecho > Agregar sección) como [{titulo, desde}] con desde en base 1."""
+    import zipfile
+    try:
+        with zipfile.ZipFile(pptx) as z:
+            xml = z.read("ppt/presentation.xml").decode("utf-8")
+    except Exception:
+        return []
+    lista = re.search(r"<p:sldIdLst>(.*?)</p:sldIdLst>", xml, re.S)
+    if not lista:
+        return []
+    orden = {sid: i + 1 for i, sid in enumerate(re.findall(r'<p:sldId [^>]*id="(\d+)"', lista.group(1)))}
+    secciones = []
+    for nombre, cuerpo in re.findall(r'<p14:section [^>]*name="([^"]*)"[^>]*>(.*?)</p14:section>', xml, re.S):
+        ids = [orden[s] for s in re.findall(r'<p14:sldId id="(\d+)"', cuerpo) if s in orden]
+        if ids:
+            secciones.append({"titulo": html.unescape(nombre), "desde": min(ids)})
+    secciones.sort(key=lambda s: s["desde"])
+    # Una sola sección por defecto no aporta nada
+    if len(secciones) == 1 and secciones[0]["desde"] == 1 and secciones[0]["titulo"].lower() in ("sección predeterminada", "default section"):
+        return []
+    return secciones
 
 
 def renderizar(plantilla: str, **campos) -> str:
@@ -162,6 +208,10 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
         info["n"] = len(nombres)
         marca.write_text(json.dumps({"firma": firma, "n": info["n"]}))
         print(f"    {info['n']} diapositivas")
+
+    generar_miniaturas(carpeta / "diapositivas")
+    # Secciones: las de presentaciones.yml mandan; si no hay, las de PowerPoint
+    info["secciones"] = meta.get("secciones") or (leer_secciones(fuente) if fuente.suffix.lower() == ".pptx" else [])
 
     descargable = f"{slug}{fuente.suffix.lower()}" if fuente.suffix.lower() != ".pdf" else ""
     enlaces_html = "".join(
@@ -355,7 +405,7 @@ def main():
     for p in presentaciones:
         shutil.copy2(PLANTILLAS / "visor.html", SITIO / p["slug"] / "visor.html")
         (SITIO / p["slug"] / "visor.json").write_text(
-            json.dumps({"titulo": p["titulo"], "n": p["n"]}, ensure_ascii=False)
+            json.dumps({"titulo": p["titulo"], "n": p["n"], "secciones": p.get("secciones", [])}, ensure_ascii=False)
         )
     shutil.copy2(PLANTILLAS / "estilos.css", SITIO / "estilos.css")
     (SITIO / ".nojekyll").touch()

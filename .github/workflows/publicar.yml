@@ -38,7 +38,7 @@ jobs:
       - name: Instalar LibreOffice, poppler y fuentes
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q libreoffice-impress poppler-utils python3-yaml \
+          sudo apt-get install -y -q libreoffice-impress poppler-utils python3-yaml python3-pil \
             fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu fonts-noto-core
           fc-cache -f
 

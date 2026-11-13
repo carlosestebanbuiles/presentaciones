@@ -27,6 +27,10 @@ En el índice, el botón **Presentar** abre el visor:
 
 - `→`, espacio o clic en la mitad derecha: siguiente; `←` o clic en la mitad izquierda: anterior.
 - `F` (o el botón de iniciar del presentador de mano): pantalla completa; `B` o `.`: pantalla en negro; `Esc`: salir. En celular o tableta se desliza con el dedo.
+- `M` o el botón **☰ Diapositivas** de la barra inferior: abre o cierra el menú lateral con las miniaturas.
+  Si la presentación tiene secciones de PowerPoint (clic derecho en el panel de miniaturas > Agregar sección),
+  aparecen como encabezados del menú y se puede saltar a cada una. También se pueden definir en
+  `presentaciones.yml` con `secciones: [{titulo: "Eje 1", desde: 18}, ...]`.
 - La dirección lleva el número de diapositiva (`visor.html#12`), así que se puede compartir un enlace a una diapositiva concreta.
 
 ## Estructura
