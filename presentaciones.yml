@@ -10,6 +10,7 @@ _sitio:
   orden_categorias:
     - Académicas
     - Industria farmacéutica
+    - Festina Lente
   sin_clasificar: Sin clasificar
 
 Disruptores_endocrinos_2026:
@@ -29,6 +30,13 @@ EOT_2026_Guias:
   autor: Carlos Builes
   categoria: Industria farmacéutica / Amgen
   descripcion: Convergencias, controversias y decisiones clínicas en enfermedad ocular tiroidea (EUGOGO 2021, ATA/ETA 2022, consenso colombiano 2026). Amgen Rare Disease, 2026.
+
+Mesa_vitamina_D_2026:
+  titulo: "Vitamina D más allá del hueso: de la experiencia clínica a la evidencia"
+  autor: Carlos Builes
+  fecha: 2026-11-13
+  categoria: Festina Lente
+  descripcion: Mesa de expertos de la Asociación Colombiana de Endocrinología (ACE). Contraste panel–evidencia, mensajes clave y prioridades para educación médica continuada.
 
 # Plantilla para las siguientes:
 # nombre-del-archivo-sin-extension:
