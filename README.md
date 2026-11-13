@@ -37,6 +37,16 @@ En el índice, el botón **Presentar** abre el visor:
   a otra diapositiva también funcionan. La ficha muestra todos los enlaces con su número de diapositiva.
 - La dirección lleva el número de diapositiva (`visor.html#12`), así que se puede compartir un enlace a una diapositiva concreta.
 
+## Portadas de las carpetas
+
+Cada carpeta tiene una portada propia, configurable en `presentaciones.yml` (`_sitio.portadas`), por ruta:
+
+- Portada tipográfica: `{color: "#2e7d5b", icono: academico}` (íconos: `academico`, `industria`, `carpeta`).
+- Imagen: `{imagen: festina-lente.jpg}`, con el archivo en la carpeta `portadas/` (16:9, unos 1280×720).
+
+Las subcarpetas sin configuración heredan el color y el ícono de la carpeta madre con un matiz propio.
+Para configurar una subcarpeta se usa la ruta completa, por ejemplo `"Industria farmacéutica / Amgen"`.
+
 ## Presentar sin internet
 
 En la ficha de cada presentación, **Guardar para usar sin conexión** descarga las diapositivas y el visor

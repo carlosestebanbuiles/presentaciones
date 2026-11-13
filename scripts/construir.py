@@ -400,15 +400,74 @@ def primera_portada(carpeta: dict):
     return None
 
 
-def tarjeta_carpeta_html(nombre: str, carpeta: dict, prefijo: str) -> str:
+# ---- Portadas de las carpetas ----
+# Se configuran en presentaciones.yml (_sitio.portadas), por ruta de carpeta:
+#   "Académicas": {color: "#2e7d5b", icono: academico}
+#   "Festina Lente": {imagen: festina-lente.jpg}      (archivo dentro de portadas/)
+# Una subcarpeta sin configuración hereda el color y el ícono de su carpeta madre, con un matiz propio.
+PORTADAS: dict = {}
+ICONOS = {
+    "academico": '<path d="M2 9.5 12 4.5l10 5-10 5z"/><path d="M6 11.5v4.8c0 1.4 2.7 3.2 6 3.2s6-1.8 6-3.2v-4.8"/><path d="M22 9.5v5.5"/>',
+    "industria": '<path d="M9.5 3h5"/><path d="M10.5 3v6.2L5 18.6A1.9 1.9 0 0 0 6.6 21.5h10.8a1.9 1.9 0 0 0 1.6-2.9L13.5 9.2V3"/><path d="M7.4 15h9.2"/>',
+    "carpeta": '<path d="M3 7.5A2 2 0 0 1 5 5.5h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+}
+COLOR_POR_DEFECTO = "#4f6478"
+
+
+def _hex_a_rgb(c: str):
+    c = c.lstrip("#")
+    return tuple(int(c[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+
+def _rgb_a_hex(rgb) -> str:
+    return "#" + "".join(f"{max(0, min(255, round(x * 255))):02x}" for x in rgb)
+
+
+def _ajustar(color: str, matiz: float = 0.0, luz: float = 0.0, sat: float = 0.0) -> str:
+    import colorsys
+    h, l, s = colorsys.rgb_to_hls(*_hex_a_rgb(color))
+    return _rgb_a_hex(colorsys.hls_to_rgb((h + matiz) % 1, max(0, min(1, l + luz)), max(0, min(1, s + sat))))
+
+
+def estilo_carpeta(ruta: list[str], posicion: int) -> dict:
+    """Color, ícono e imagen para la carpeta cuya ruta completa es `ruta` (p. ej. ["Industria farmacéutica", "Amgen"])."""
+    propia = PORTADAS.get(" / ".join(ruta)) or {}
+    if len(ruta) > 1:
+        madre = estilo_carpeta(ruta[:-1], 0)
+        # matiz propio para cada subcarpeta: alterna hacia un lado y otro del color de la madre
+        paso = ((posicion // 2) + 1) * (1 if posicion % 2 == 0 else -1)
+        color = propia.get("color") or _ajustar(madre["color"], matiz=0.035 * paso, luz=0.03 * (1 if paso > 0 else -1))
+        icono = propia.get("icono") or madre["icono"]
+    else:
+        color = propia.get("color") or COLOR_POR_DEFECTO
+        icono = propia.get("icono") or "carpeta"
+    return {"color": color, "icono": icono if icono in ICONOS else "carpeta", "imagen": propia.get("imagen")}
+
+
+def portada_carpeta_html(ruta: list[str], posicion: int, prefijo: str) -> str:
+    e = estilo_carpeta(ruta, posicion)
+    if e["imagen"] and (RAIZ / "portadas" / e["imagen"]).exists():
+        v = hash_archivo(RAIZ / "portadas" / e["imagen"])[:8]
+        return (f'<div class="portada"><img src="{prefijo}portadas/{html.escape(e["imagen"])}?v={v}" '
+                f'alt="{html.escape(ruta[-1])}" loading="lazy"></div>')
+    c1 = _ajustar(e["color"], luz=0.06)
+    c2 = _ajustar(e["color"], luz=-0.10, matiz=0.02)
+    madre = f'<span class="ruta-portada">{html.escape(" · ".join(ruta[:-1]))}</span>' if len(ruta) > 1 else ""
+    svg = f'<svg viewBox="0 0 24 24" aria-hidden="true">{ICONOS[e["icono"]]}</svg>'
+    return (f'<div class="portada portada-tipo" style="--c1:{c1};--c2:{c2}">'
+            f'<span class="fondo-icono">{svg}</span>'
+            f'<span class="icono-portada">{svg}</span>{madre}'
+            f'<span class="nombre-portada">{html.escape(ruta[-1])}</span></div>')
+
+
+def tarjeta_carpeta_html(nombre: str, carpeta: dict, prefijo: str, ruta_madre: list[str] | None = None, posicion: int = 0) -> str:
     n = contar(carpeta)
-    portada = primera_portada(carpeta)
-    img = f'<img src="{prefijo}{portada["slug"]}/diapositivas/001.jpg?v={portada["v"]}" alt="" loading="lazy">' if portada else ""
     nsub = len(carpeta["sub"])
     detalle = f'{n} presentaci{"ón" if n == 1 else "ones"}' + (f' · {nsub} subcategor{"ía" if nsub == 1 else "ías"}' if nsub else "")
+    portada = portada_carpeta_html((ruta_madre or []) + [nombre], posicion, prefijo)
     return f"""
       <a class="carpeta" href="{slugificar(nombre)}/">
-        <div class="portada">{img}</div>
+        {portada}
         <div class="texto"><h3>{html.escape(nombre)}</h3><p class="detalles">{detalle}</p></div>
       </a>"""
 
@@ -428,7 +487,8 @@ def escribir_carpeta(ruta_nombres: list[str], carpeta: dict, config: dict, orden
         subida = "../" * (len(ruta_nombres) - 1 - i)
         migas.append(f'<a href="{subida}">{html.escape(nombre)}</a>' if i < len(ruta_nombres) - 1 else f'<span>{html.escape(nombre)}</span>')
 
-    carpetas_html = "".join(tarjeta_carpeta_html(nombre, carpeta["sub"][nombre], prefijo) for nombre in subnombres)
+    carpetas_html = "".join(tarjeta_carpeta_html(nombre, carpeta["sub"][nombre], prefijo, ruta_nombres, k)
+                            for k, nombre in enumerate(subnombres))
     items_html = "".join(tarjeta_html(p, prefijo) for p in carpeta["items"])
     bloques = []
     if carpetas_html:
@@ -541,8 +601,8 @@ def construir_indice(presentaciones: list[dict], config: dict):
     escribir_carpeta([], {"sub": {}, "items": raiz["items"]}, config, orden, raiz_destino, "")
     # Reescribir la raíz con enlaces a c/<cat>/
     sub_html = "".join(
-        tarjeta_carpeta_html(n, raiz["sub"][n], "").replace(f'href="{slugificar(n)}/"', f'href="c/{slugificar(n)}/"')
-        for n in sorted(raiz["sub"], key=lambda n: (orden.index(n) if n in orden else len(orden), n == sin_clasificar, n.lower()))
+        tarjeta_carpeta_html(n, raiz["sub"][n], "", [], k).replace(f'href="{slugificar(n)}/"', f'href="c/{slugificar(n)}/"')
+        for k, n in enumerate(sorted(raiz["sub"], key=lambda n: (orden.index(n) if n in orden else len(orden), n == sin_clasificar, n.lower())))
     )
     contenido_raiz = buscador_html(presentaciones) + (
         f'<section id="carpetas" class="rejilla carpetas">{sub_html}</section>' if sub_html else "<p>Aún no hay presentaciones.</p>")
@@ -572,6 +632,8 @@ def main():
     SITIO.mkdir(exist_ok=True)
     metadatos = cargar_metadatos()
     config = metadatos.pop("_sitio", {}) or {}
+    PORTADAS.clear()
+    PORTADAS.update({str(k).strip(): (v or {}) for k, v in (config.get("portadas") or {}).items()})
 
     fuentes = sorted(p for p in FUENTES.iterdir()
                      if p.suffix.lower() in (".pptx", ".ppt", ".odp", ".pdf") and not p.name.startswith("."))
@@ -585,7 +647,7 @@ def main():
     # Borrar carpetas del sitio cuya fuente ya no existe
     vivos = {p["slug"] for p in presentaciones}
     for carpeta in SITIO.iterdir():
-        if carpeta.is_dir() and carpeta.name not in vivos and carpeta.name != "c":
+        if carpeta.is_dir() and carpeta.name not in vivos and carpeta.name not in ("c", "portadas"):
             shutil.rmtree(carpeta)
             print(f"  - {carpeta.name}: fuente eliminada, carpeta borrada")
 
@@ -598,6 +660,8 @@ def main():
         )
     shutil.copy2(PLANTILLAS / "estilos.css", SITIO / "estilos.css")
     shutil.copy2(PLANTILLAS / "sw.js", SITIO / "sw.js")
+    if (RAIZ / "portadas").exists():
+        shutil.copytree(RAIZ / "portadas", SITIO / "portadas", dirs_exist_ok=True)
     (SITIO / ".nojekyll").touch()
     construir_indice(presentaciones, config)
     print(f"Listo: {len(presentaciones)} presentaciones en {SITIO}")

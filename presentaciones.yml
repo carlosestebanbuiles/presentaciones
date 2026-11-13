@@ -12,6 +12,13 @@ _sitio:
     - Industria farmacéutica
     - Festina Lente
   sin_clasificar: Sin clasificar
+  # Portada de cada carpeta: color e ícono (academico, industria, carpeta) o una imagen de la carpeta portadas/.
+  # Las subcarpetas sin configuración heredan el color de su carpeta madre con un matiz propio.
+  # Para una subcarpeta se usa la ruta completa, por ejemplo "Industria farmacéutica / Amgen".
+  portadas:
+    Académicas: {color: "#2e7d5b", icono: academico}
+    Industria farmacéutica: {color: "#1f5fae", icono: industria}
+    Festina Lente: {imagen: festina-lente.jpg, color: "#33434a"}
 
 Disruptores_endocrinos_2026:
   titulo: Disruptores endocrinos en dermatología
