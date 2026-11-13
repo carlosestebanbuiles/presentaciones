@@ -74,7 +74,8 @@
   const info = await fetch('visor.json').then(r => r.json()).catch(() => ({ n: 0 }));
   const total = info.n || 0;
   document.title = info.titulo || 'Presentación';
-  const ruta = i => `diapositivas/${String(i).padStart(3, '0')}.jpg`;
+  const version = info.v ? `?v=${info.v}` : '';
+  const ruta = i => `diapositivas/${String(i).padStart(3, '0')}.jpg${version}`;
 
   let actual = Math.min(Math.max(parseInt(location.hash.slice(1)) || 1, 1), Math.max(total, 1));
   let imgVisible = null;
@@ -82,7 +83,7 @@
   // ---- Menú lateral ----
   const menu = document.getElementById('menu');
   const lista = document.getElementById('listaMenu');
-  const mini = i => `diapositivas/m/${String(i).padStart(3, '0')}.jpg`;
+  const mini = i => `diapositivas/m/${String(i).padStart(3, '0')}.jpg${version}`;
   const secciones = (info.secciones || []).filter(s => s.desde >= 1 && s.desde <= total);
   const inicioSeccion = new Map(secciones.map(s => [s.desde, s.titulo]));
   const items = [];

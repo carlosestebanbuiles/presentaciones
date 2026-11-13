@@ -27,6 +27,7 @@ En el índice, el botón **Presentar** abre el visor:
 
 - `→`, espacio o clic en la mitad derecha: siguiente; `←` o clic en la mitad izquierda: anterior.
 - `F` (o el botón de iniciar del presentador de mano): pantalla completa; `B` o `.`: pantalla en negro; `Esc`: salir. En celular o tableta se desliza con el dedo.
+- En la portada, el buscador filtra por título, nombre del archivo, categoría, autor y descripción (tecla `/` para enfocarlo).
 - `M` o el botón **☰ Diapositivas** de la barra inferior: abre o cierra el menú lateral con las miniaturas.
   Si la presentación tiene secciones de PowerPoint (clic derecho en el panel de miniaturas > Agregar sección),
   aparecen como encabezados del menú y se puede saltar a cada una. También se pueden definir en

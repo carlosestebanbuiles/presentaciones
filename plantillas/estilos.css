@@ -63,3 +63,13 @@ footer { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; color: var(--s
 .ficha h2 { font-size: 1.05rem; margin: 24px 0 8px; }
 .volver { display: inline-block; margin-bottom: 20px; color: var(--suave); text-decoration: none; }
 .volver:hover { color: var(--acento); }
+
+/* Buscador de la portada */
+.buscador { margin: 0 0 22px; }
+.buscador input { width: 100%; max-width: 560px; box-sizing: border-box; padding: 11px 14px 11px 40px; font-size: 1rem;
+                  border: 1px solid var(--borde); border-radius: 10px; background: var(--tarjeta) no-repeat 13px center / 18px;
+                  color: var(--texto); outline: none;
+                  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a94a3' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E"); }
+.buscador input:focus { border-color: var(--acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 20%, transparent); }
+.sin-resultados { color: var(--suave); }
+[hidden] { display: none !important; }

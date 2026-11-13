@@ -189,6 +189,7 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
         "archivo": fuente.name,
     }
 
+    info["v"] = firma[:10]
     previa = json.loads(marca.read_text()) if marca.exists() else {}
     if solo_nuevas and previa.get("firma") == firma and (carpeta / "diapositivas").exists():
         print(f"  = {fuente.name}: sin cambios")
@@ -226,6 +227,7 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
             fecha=html.escape(fecha_legible(info["fecha"])),
             descripcion=html.escape(info["descripcion"]),
             n=info["n"],
+            v=info["v"],
             pdf=f"{slug}.pdf",
             pptx=descargable,
             boton_pptx=(f'<a class="boton" href="{descargable}" download>Descargar PowerPoint</a>' if descargable else ""),
@@ -242,7 +244,7 @@ def tarjeta_html(p: dict, prefijo: str) -> str:
     detalles = " · ".join(x for x in [fecha_legible(p["fecha"]), p["autor"], f'{p["n"]} diapositivas'] if x)
     return f"""
       <article class="tarjeta">
-        <a href="{base}" class="portada"><img src="{base}diapositivas/001.jpg" alt="" loading="lazy"></a>
+        <a href="{base}" class="portada"><img src="{base}diapositivas/001.jpg?v={p['v']}" alt="" loading="lazy"></a>
         <div class="texto">
           <h3><a href="{base}">{html.escape(p['titulo'])}</a></h3>
           <p class="detalles">{html.escape(detalles)}</p>
@@ -272,7 +274,7 @@ def primera_portada(carpeta: dict):
 def tarjeta_carpeta_html(nombre: str, carpeta: dict, prefijo: str) -> str:
     n = contar(carpeta)
     portada = primera_portada(carpeta)
-    img = f'<img src="{prefijo}{portada["slug"]}/diapositivas/001.jpg" alt="" loading="lazy">' if portada else ""
+    img = f'<img src="{prefijo}{portada["slug"]}/diapositivas/001.jpg?v={portada["v"]}" alt="" loading="lazy">' if portada else ""
     nsub = len(carpeta["sub"])
     detalle = f'{n} presentaci{"ón" if n == 1 else "ones"}' + (f' · {nsub} subcategor{"ía" if nsub == 1 else "ías"}' if nsub else "")
     return f"""
@@ -328,6 +330,61 @@ def escribir_carpeta(ruta_nombres: list[str], carpeta: dict, config: dict, orden
                          destino / slugificar(nombre), prefijo + "../")
 
 
+def normalizar(texto: str) -> str:
+    """Minúsculas sin tildes, para buscar 'cushing' o 'farmaceutica' sin importar acentos."""
+    texto = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode()
+    return re.sub(r"\s+", " ", texto.lower()).strip()
+
+
+def buscador_html(presentaciones: list[dict]) -> str:
+    """Caja de búsqueda de la portada: filtra por título, archivo, categoría, autor, descripción y fecha."""
+    if not presentaciones:
+        return ""
+    tarjetas = []
+    for p in presentaciones:
+        texto = " ".join(str(x) for x in [p["titulo"], p["archivo"], Path(p["archivo"]).stem.replace("_", " "),
+                                          p["categoria"], p["autor"], p["descripcion"], fecha_legible(p["fecha"])] if x)
+        tarjetas.append(tarjeta_html(p, "").replace('<article class="tarjeta">',
+                        f'<article class="tarjeta" data-busqueda="{html.escape(normalizar(texto))}" hidden>', 1))
+    return f"""
+  <div class="buscador">
+    <input id="buscar" type="search" placeholder="Buscar por título, archivo, categoría o autor…" autocomplete="off" aria-label="Buscar presentaciones">
+  </div>
+  <p id="sinResultados" class="sin-resultados" hidden>No hay presentaciones que coincidan.</p>
+  <section id="resultados" class="rejilla" hidden>{"".join(tarjetas)}</section>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {{
+    const caja = document.getElementById('buscar');
+    const resultados = document.getElementById('resultados');
+    const carpetas = document.getElementById('carpetas');
+    const vacio = document.getElementById('sinResultados');
+    const tarjetas = [...resultados.querySelectorAll('.tarjeta')];
+    const norm = s => s.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().trim();
+    function filtrar() {{
+      const palabras = norm(caja.value).split(/\\s+/).filter(Boolean);
+      const activo = palabras.length > 0;
+      let n = 0;
+      for (const t of tarjetas) {{
+        const ok = activo && palabras.every(w => t.dataset.busqueda.includes(w));
+        t.hidden = !ok; if (ok) n++;
+      }}
+      resultados.hidden = !activo || n === 0;
+      vacio.hidden = !activo || n > 0;
+      if (carpetas) carpetas.hidden = activo;
+      history.replaceState(null, '', activo ? '#buscar=' + encodeURIComponent(caja.value) : location.pathname);
+    }}
+    caja.addEventListener('input', filtrar);
+    caja.addEventListener('keydown', e => {{ if (e.key === 'Escape') {{ caja.value = ''; filtrar(); }} }});
+    const previo = location.hash.match(/^#buscar=(.*)$/);
+    if (previo) {{ caja.value = decodeURIComponent(previo[1]); filtrar(); }}
+    // "/" enfoca el buscador, como en muchos sitios
+    document.addEventListener('keydown', e => {{
+      if (e.key === '/' && document.activeElement !== caja) {{ e.preventDefault(); caja.focus(); }}
+    }});
+  }});
+  </script>"""
+
+
 def construir_indice(presentaciones: list[dict], config: dict):
     def clave(p):
         f = p.get("fecha")
@@ -358,6 +415,8 @@ def construir_indice(presentaciones: list[dict], config: dict):
         tarjeta_carpeta_html(n, raiz["sub"][n], "").replace(f'href="{slugificar(n)}/"', f'href="c/{slugificar(n)}/"')
         for n in sorted(raiz["sub"], key=lambda n: (orden.index(n) if n in orden else len(orden), n == sin_clasificar, n.lower()))
     )
+    contenido_raiz = buscador_html(presentaciones) + (
+        f'<section id="carpetas" class="rejilla carpetas">{sub_html}</section>' if sub_html else "<p>Aún no hay presentaciones.</p>")
     (SITIO / "index.html").write_text(
         renderizar(
             "indice.html",
@@ -366,7 +425,7 @@ def construir_indice(presentaciones: list[dict], config: dict):
             subtitulo=html.escape(config.get("subtitulo", "")),
             migas="",
             prefijo="",
-            contenido=(f'<section class="rejilla carpetas">{sub_html}</section>' if sub_html else "<p>Aún no hay presentaciones.</p>"),
+            contenido=contenido_raiz,
             pie=config.get("pie", ""),
         ),
         encoding="utf-8",
@@ -405,7 +464,7 @@ def main():
     for p in presentaciones:
         shutil.copy2(PLANTILLAS / "visor.html", SITIO / p["slug"] / "visor.html")
         (SITIO / p["slug"] / "visor.json").write_text(
-            json.dumps({"titulo": p["titulo"], "n": p["n"], "secciones": p.get("secciones", [])}, ensure_ascii=False)
+            json.dumps({"titulo": p["titulo"], "n": p["n"], "v": p["v"], "secciones": p.get("secciones", [])}, ensure_ascii=False)
         )
     shutil.copy2(PLANTILLAS / "estilos.css", SITIO / "estilos.css")
     (SITIO / ".nojekyll").touch()
