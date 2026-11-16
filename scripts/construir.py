@@ -59,17 +59,50 @@ def cargar_metadatos() -> dict:
     return {}
 
 
+# Versión del proceso de conversión: al cambiarla se reconvierten todas las presentaciones
+# (y cambia la versión de las imágenes, para que ningún navegador use las anteriores).
+CONVERSOR_V = "2"  # 2: se quitan las fuentes incrustadas antes de convertir
+
+
+def sin_fuentes_incrustadas(pptx: Path, destino: Path) -> Path:
+    """Copia del .pptx sin las fuentes incrustadas (ppt/fonts/*.fntdata).
+    PowerPoint incrusta copias parciales de las fuentes; algunas versiones de LibreOffice las leen mal
+    y desordenan las letras. Sin ellas, LibreOffice usa las fuentes instaladas (Montserrat, Open Sans…)."""
+    import zipfile
+    with zipfile.ZipFile(pptx) as zin:
+        nombres = zin.namelist()
+        if not any(n.startswith("ppt/fonts/") for n in nombres):
+            return pptx
+        salida = destino / pptx.name
+        with zipfile.ZipFile(salida, "w", zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                if item.filename.startswith("ppt/fonts/"):
+                    continue
+                datos = zin.read(item.filename)
+                if item.filename == "ppt/presentation.xml":
+                    datos = re.sub(rb"<p:embeddedFontLst>.*?</p:embeddedFontLst>", b"", datos, flags=re.S)
+                elif item.filename.endswith(".rels"):
+                    datos = re.sub(rb'<Relationship [^>]*Target="fonts/[^"]*"[^>]*/>', b"", datos)
+                elif item.filename == "[Content_Types].xml":
+                    datos = re.sub(rb'<Default Extension="fntdata"[^>]*/>', b"", datos)
+                zout.writestr(item, datos)
+    return salida
+
+
 def pptx_a_pdf(pptx: Path, destino: Path) -> Path:
     """Convierte con LibreOffice en modo headless. Devuelve la ruta del PDF."""
+    import tempfile
     perfil = Path("/tmp/lo-perfil")
-    subprocess.run(
-        [
-            "soffice", "--headless", "--norestore",
-            f"-env:UserInstallation=file://{perfil}",
-            "--convert-to", "pdf", "--outdir", str(destino), str(pptx),
-        ],
-        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600,
-    )
+    with tempfile.TemporaryDirectory() as tmp:
+        entrada = sin_fuentes_incrustadas(pptx, Path(tmp)) if pptx.suffix.lower() == ".pptx" else pptx
+        subprocess.run(
+            [
+                "soffice", "--headless", "--norestore",
+                f"-env:UserInstallation=file://{perfil}",
+                "--convert-to", "pdf", "--outdir", str(destino), str(entrada),
+            ],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600,
+        )
     pdf = destino / (pptx.stem + ".pdf")
     if not pdf.exists():
         raise RuntimeError(f"LibreOffice no produjo el PDF de {pptx.name}")
@@ -291,7 +324,7 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
     carpeta = SITIO / slug
     carpeta.mkdir(parents=True, exist_ok=True)
     marca = carpeta / ".fuente.json"
-    firma = hash_archivo(fuente)
+    firma = hash_archivo(fuente) + "-c" + CONVERSOR_V
 
     titulo = meta.get("titulo") or fuente.stem.replace("_", " ").replace("-", " ")
     info = {
@@ -305,7 +338,7 @@ def construir_una(fuente: Path, meta: dict, solo_nuevas: bool) -> dict:
         "archivo": fuente.name,
     }
 
-    info["v"] = firma[:10]
+    info["v"] = hashlib.sha256(firma.encode()).hexdigest()[:10]
     previa = json.loads(marca.read_text()) if marca.exists() else {}
     if solo_nuevas and previa.get("firma") == firma and (carpeta / "diapositivas").exists():
         print(f"  = {fuente.name}: sin cambios")
