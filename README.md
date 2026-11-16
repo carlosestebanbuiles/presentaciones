@@ -21,6 +21,10 @@ cambiaron no se vuelven a convertir.
 
 Para quitar una presentación basta con borrar el archivo de `fuentes/`.
 
+**Archivos muy pesados:** GitHub no acepta archivos de más de 100 MB. Si un PowerPoint pasa de ese tamaño,
+se sube una copia optimizada: las imágenes opacas grandes (PNG) se recomprimen como JPEG de alta calidad dentro
+del .pptx y las que tienen transparencia se dejan intactas. Se comparan las diapositivas antes de subirla.
+
 ## Cómo se presenta
 
 En el índice, el botón **Presentar** abre el visor:

@@ -9,6 +9,7 @@ _sitio:
   # Orden de las categorías en el índice (las no listadas van después, alfabéticamente)
   orden_categorias:
     - Académicas
+    - HPTU
     - Industria farmacéutica
     - Festina Lente
   sin_clasificar: Sin clasificar
@@ -19,6 +20,7 @@ _sitio:
     Académicas: {color: "#2e7d5b", icono: academico}
     Industria farmacéutica: {color: "#1f5fae", icono: industria}
     Festina Lente: {imagen: festina-lente.jpg, color: "#33434a"}
+    HPTU: {imagen: hptu.jpg, color: "#1069a2"}
 
 Disruptores_endocrinos_2026:
   titulo: Disruptores endocrinos en dermatología
@@ -44,6 +46,12 @@ Mesa_vitamina_D_2026:
   fecha: 2026-11-13
   categoria: Festina Lente / ACE
   descripcion: Mesa de expertos de la Asociación Colombiana de Endocrinología (ACE). Contraste panel–evidencia, mensajes clave y prioridades para educación médica continuada.
+
+Insulina_hiperglucemia_NPT:
+  titulo: Insulina en la hiperglucemia por nutrición parenteral
+  autor: Carlos Builes
+  categoria: HPTU
+  descripcion: Qué sabemos, qué hacemos y qué nos falta. Endocrinología, Hospital Pablo Tobón Uribe.
 
 # Plantilla para las siguientes:
 # nombre-del-archivo-sin-extension:
