@@ -53,6 +53,12 @@ Insulina_hiperglucemia_NPT:
   categoria: HPTU
   descripcion: Qué sabemos, qué hacemos y qué nos falta. Endocrinología, Hospital Pablo Tobón Uribe.
 
+Evaluacion_CGM_ACE_pagadores:
+  titulo: "¿Qué tan confiable es un CGM para cada decisión?"
+  autor: Carlos Builes
+  categoria: Festina Lente / ACE
+  descripcion: Evaluación clínica de sistemas CGM. Un marco para leer la evidencia antes de decidir cobertura. Presentación para pagadores, Asociación Colombiana de Endocrinología.
+
 # Plantilla para las siguientes:
 # nombre-del-archivo-sin-extension:
 #   titulo:
