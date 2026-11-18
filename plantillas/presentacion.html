@@ -22,6 +22,8 @@
         <a class="boton primario" href="visor.html">▶ Presentar</a>
         <a class="boton" href="{{pdf}}">Ver PDF</a>
         {{boton_pptx}}
+        <button type="button" id="copiarEnlace" class="boton">🔗 Copiar enlace</button>
+        <button type="button" id="compartir" class="boton" hidden>⤴ Compartir</button>
       </p>
       <div id="sinConexion" class="sin-conexion" hidden>
         <button id="guardar" class="boton">⤓ Guardar para usar sin conexión</button>
@@ -32,6 +34,35 @@
   </div>
 </main>
 <script>
+// Copiar enlace / Compartir: siempre la dirección limpia de esta ficha
+(() => {
+  const url = location.origin + location.pathname;
+  const titulo = document.querySelector('h1').textContent.trim();
+  const boton = document.getElementById('copiarEnlace');
+  const original = boton.textContent;
+  async function copiar(texto) {
+    try { await navigator.clipboard.writeText(texto); return true; } catch (e) {}
+    // Respaldo para navegadores sin acceso al portapapeles
+    const area = document.createElement('textarea');
+    area.value = texto; area.setAttribute('readonly', ''); area.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(area); area.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+    area.remove(); return ok;
+  }
+  boton.addEventListener('click', async () => {
+    const ok = await copiar(url);
+    boton.textContent = ok ? '✓ Enlace copiado' : url;
+    boton.classList.toggle('copiado', ok);
+    setTimeout(() => { boton.textContent = original; boton.classList.remove('copiado'); }, 2200);
+  });
+  // En celulares y tabletas: menú de compartir del sistema (WhatsApp, correo…)
+  const compartir = document.getElementById('compartir');
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    compartir.hidden = false;
+    compartir.addEventListener('click', () => navigator.share({ title: titulo, url }).catch(() => {}));
+  }
+})();
+
 (async () => {
   if (!('serviceWorker' in navigator) || !('caches' in window)) return;
   try { await navigator.serviceWorker.register('../sw.js'); } catch (e) { return; }
