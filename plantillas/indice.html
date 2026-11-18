@@ -16,6 +16,28 @@
 {{contenido}}
 </main>
 <footer>{{pie}}</footer>
+<script>
+// Botón Compartir de cada tarjeta: en celulares abre el menú del sistema; en el computador copia el enlace de la ficha
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('.compartir-tarjeta');
+  if (!b) return;
+  const url = new URL(b.dataset.ficha, location.href).href;
+  const titulo = b.dataset.titulo;
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    navigator.share({ title: titulo, url }).catch(() => {});
+    return;
+  }
+  let ok = false;
+  try { await navigator.clipboard.writeText(url); ok = true; } catch (e) {
+    const a = document.createElement('textarea'); a.value = url; a.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(a); a.select(); try { ok = document.execCommand('copy'); } catch (e2) {} a.remove();
+  }
+  const antes = b.textContent;
+  b.textContent = ok ? '✓ Enlace copiado' : 'No se pudo copiar';
+  b.classList.toggle('copiado', ok);
+  setTimeout(() => { b.textContent = antes; b.classList.remove('copiado'); }, 2000);
+});
+</script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('{{prefijo}}sw.js').catch(() => {});</script>
 </body>
 </html>

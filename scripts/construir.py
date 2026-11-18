@@ -414,6 +414,7 @@ def tarjeta_html(p: dict, prefijo: str) -> str:
           <p class="acciones">
             <a class="boton primario" href="{base}visor.html">Presentar</a>
             <a class="boton" href="{base}{p['slug']}.pdf">PDF</a>
+            <button type="button" class="boton compartir-tarjeta" data-ficha="{base}" data-titulo="{html.escape(p['titulo'])}">🔗 Compartir</button>
           </p>
         </div>
       </article>"""
