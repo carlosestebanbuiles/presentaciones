@@ -65,7 +65,7 @@ Obesidad_tratamiento_medico_ENDOTOUR_2026:
   fecha: 2026-11-20
   categoria: Académicas
   descripcion: Por qué tratamos, qué logramos, qué tenemos en Colombia (incluye análisis propio de SISPRO-RIPS) y qué cambia en la sala de endoscopia. ENDOTOUR 2026, Asociación Colombiana de Endoscopia Digestiva.
-  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "El problema", desde: 4}, {titulo: "Motivaciones", desde: 8}, {titulo: "Por qué tratamos", desde: 10}, {titulo: "Qué tenemos en Colombia", desde: 18}, {titulo: "En la sala de endoscopia", desde: 21}, {titulo: "Cierre y referencias", desde: 22}, {titulo: "Respaldo", desde: 24}]
+  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "El problema", desde: 4}, {titulo: "Motivaciones", desde: 9}, {titulo: "Por qué tratamos", desde: 11}, {titulo: "Qué tenemos en Colombia", desde: 20}, {titulo: "En la sala de endoscopia", desde: 23}, {titulo: "Cierre y referencias", desde: 24}]
 
 # Plantilla para las siguientes:
 # nombre-del-archivo-sin-extension:
