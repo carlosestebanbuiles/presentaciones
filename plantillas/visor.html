@@ -8,14 +8,20 @@
   html, body { margin: 0; height: 100%; background: #000; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
   #escenario { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; cursor: none; }
   #escenario.activo { cursor: default; }
-  /* Puntero láser virtual (tecla R) */
-  #laser { position: fixed; left: 0; top: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; pointer-events: none; z-index: 6;
-           background: radial-gradient(circle, #fff 0 18%, #ff2a2a 36% 62%, rgba(255,42,42,0) 72%);
-           box-shadow: 0 0 10px 4px rgba(255,30,30,.75), 0 0 26px 10px rgba(255,30,30,.35); opacity: 0; transition: opacity .25s ease; }
-  body.laser #laser.visible { opacity: 1; }
-  body.laser #escenario, body.laser #escenario.activo { cursor: none; }
-  body.laser #capaEnlaces a { pointer-events: none; }
-  #botonLaser[aria-pressed="true"] { background: rgba(255,60,60,.35); }
+  /* Puntero virtual (tecla R): láser → foco → lupa → apagado */
+  #laser { position: fixed; left: 0; top: 0; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; pointer-events: none; z-index: 6;
+           background: radial-gradient(circle, #fff 0 20%, #ff2fa0 38% 62%, rgba(255,47,160,0) 72%);
+           box-shadow: 0 0 10px 4px rgba(255,47,160,.8), 0 0 28px 12px rgba(255,47,160,.4); opacity: 0; transition: opacity .25s ease; }
+  body.p-laser #laser.visible { opacity: 1; }
+  #foco { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity .25s ease;
+          background: radial-gradient(circle var(--r, 150px) at var(--x, 50%) var(--y, 50%), rgba(0,0,0,0) 0, rgba(0,0,0,0) calc(100% - 14px), rgba(0,0,0,.72) 100%); }
+  body.p-foco #foco { opacity: 1; }
+  #lupa { position: fixed; left: 0; top: 0; border-radius: 50%; pointer-events: none; z-index: 6; display: none; background-color: #000; background-repeat: no-repeat;
+          border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.5), 0 10px 34px rgba(0,0,0,.55); }
+  body.p-lupa #lupa.visible { display: block; }
+  body.puntero #escenario, body.puntero #escenario.activo { cursor: none; }
+  body.puntero #capaEnlaces a { pointer-events: none; }
+  #botonLaser[aria-pressed="true"] { background: rgba(255,47,160,.4); }
   .diapo { position: absolute; max-width: 100%; max-height: 100%; width: auto; height: auto; aspect-ratio: 16 / 9; object-fit: contain;
            opacity: 0; transition: opacity .45s ease; user-select: none; -webkit-user-drag: none; }
   .diapo.visible { opacity: 1; }
@@ -71,6 +77,8 @@
 <body>
 <div id="escenario" class="activo"></div>
 <div id="capaEnlaces"></div>
+<div id="foco" aria-hidden="true"></div>
+<div id="lupa" aria-hidden="true"></div>
 <div id="laser" aria-hidden="true"></div>
 <div id="listaEnlaces" hidden></div>
 <nav id="menu" aria-label="Diapositivas">
@@ -82,14 +90,14 @@
   <button id="ant" title="Anterior (←)">◀</button>
   <button id="sig" title="Siguiente (→ o espacio)">▶</button>
   <button id="botonEnlaces" title="Enlaces de esta diapositiva (L)" hidden>🔗 Enlaces</button>
-  <button id="botonLaser" title="Puntero láser (R)" aria-pressed="false">● Láser</button>
+  <button id="botonLaser" title="Puntero: láser, foco, lupa (R). Rueda del ratón: tamaño" aria-pressed="false">● Puntero</button>
   <button id="pantalla" title="Pantalla completa (F)">⛶ Pantalla completa</button>
   <a href="./" title="Volver a la ficha">↩ Ficha</a>
   <a href="../" title="Todas las presentaciones">⌂ Índice</a>
   <span id="contador"></span>
 </div>
 <div id="progreso"></div>
-<div id="ayuda">← → para avanzar · M menú · F pantalla completa · R láser · B pantalla en negro</div>
+<div id="ayuda">← → para avanzar · M menú · F pantalla completa · R láser, foco o lupa · B pantalla en negro</div>
 
 <script>
 (async () => {
@@ -211,6 +219,7 @@
     escenario.appendChild(nueva);
     const anterior = imgVisible;
     imgVisible = nueva;
+    setTimeout(() => { if (modoPuntero) pintarPuntero(); }, 80);
     const activar = () => {
       requestAnimationFrame(() => nueva.classList.add('visible'));
       if (anterior) {
@@ -253,14 +262,15 @@
     else if (e.key === 'F5') { e.preventDefault(); pantallaCompleta(); }
     else if (['.', 'b', 'B'].includes(e.key)) { e.preventDefault(); alternarNegro(); }
     else if (e.key === 'm' || e.key === 'M') { e.preventDefault(); alternarMenu(); }
-    else if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); alternarLaser(); }
+    else if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); alternarPuntero(); }
     else if ((e.key === 'l' || e.key === 'L') && !botonEnlaces.hidden) { e.preventDefault(); lista2.hidden = !lista2.hidden; }
     else if (e.key === 'Escape' && menu.classList.contains('abierto')) abrirMenu(false);
+    else if (e.key === 'Escape' && modoPuntero) alternarPuntero(0);
   });
 
   // Clic: mitad derecha avanza, mitad izquierda retrocede
   // Con el láser encendido el clic no cambia de diapositiva (se avanza con las flechas o el presentador)
-  escenario.addEventListener('click', e => { if (laserActivo) return; (e.clientX > innerWidth / 2 ? siguiente() : anteriorD()); });
+  escenario.addEventListener('click', e => { if (modoPuntero) return; (e.clientX > innerWidth / 2 ? siguiente() : anteriorD()); });
 
   // Deslizar en pantallas táctiles
   let x0 = null;
@@ -271,24 +281,55 @@
     if (Math.abs(dx) > 40) (dx < 0 ? siguiente() : anteriorD());
   });
 
-  // Puntero láser virtual: un punto rojo sigue al ratón; se apaga solo tras unos segundos quieto
-  const laser = document.getElementById('laser');
+  // Puntero virtual: R rota entre láser (punto fucsia), foco (oscurece todo menos un círculo) y lupa (amplía).
+  // La rueda del ratón cambia el tamaño del foco y de la lupa. Con el puntero encendido el clic no avanza.
+  const laser = document.getElementById('laser'), foco = document.getElementById('foco'), lupa = document.getElementById('lupa');
   const botonLaser = document.getElementById('botonLaser');
-  let laserActivo = false, temporizadorLaser;
-  function alternarLaser() {
-    laserActivo = !laserActivo;
-    document.body.classList.toggle('laser', laserActivo);
-    botonLaser.setAttribute('aria-pressed', String(laserActivo));
-    if (!laserActivo) laser.classList.remove('visible');
+  const MODOS = [null, 'laser', 'foco', 'lupa'], ROTULOS = ['● Puntero', '● Láser', '◉ Foco', '🔍 Lupa'], AUMENTO = 1.7;
+  let modoPuntero = 0, temporizadorLaser, radio = 150, px = innerWidth / 2, py = innerHeight / 2;
+  function pintarPuntero() {
+    const m = MODOS[modoPuntero];
+    if (m === 'laser') laser.style.transform = `translate(${px}px, ${py}px)`;
+    else if (m === 'foco') { foco.style.setProperty('--x', px + 'px'); foco.style.setProperty('--y', py + 'px'); foco.style.setProperty('--r', radio + 'px'); }
+    else if (m === 'lupa') {
+      const img = imgVisible;
+      if (!img) return;
+      const r = img.getBoundingClientRect(), d = radio * 2;
+      lupa.style.width = lupa.style.height = d + 'px';
+      lupa.style.transform = `translate(${px - radio}px, ${py - radio}px)`;
+      lupa.style.backgroundImage = `url("${img.currentSrc || img.src}")`;
+      lupa.style.backgroundSize = `${r.width * AUMENTO}px ${r.height * AUMENTO}px`;
+      lupa.style.backgroundPosition = `${radio - 3 - (px - r.left) * AUMENTO}px ${radio - 3 - (py - r.top) * AUMENTO}px`;
+      lupa.classList.add('visible');
+    }
   }
-  botonLaser.onclick = ev => { ev.stopPropagation(); alternarLaser(); };
+  function alternarPuntero(a) {
+    modoPuntero = typeof a === 'number' ? a : (modoPuntero + 1) % MODOS.length;
+    document.body.classList.remove('p-laser', 'p-foco', 'p-lupa');
+    document.body.classList.toggle('puntero', modoPuntero > 0);
+    if (modoPuntero) document.body.classList.add('p-' + MODOS[modoPuntero]);
+    laser.classList.remove('visible'); lupa.classList.remove('visible');
+    botonLaser.textContent = ROTULOS[modoPuntero];
+    botonLaser.setAttribute('aria-pressed', String(modoPuntero > 0));
+    pintarPuntero();
+  }
+  botonLaser.onclick = ev => { ev.stopPropagation(); alternarPuntero(); };
   document.addEventListener('mousemove', e => {
-    if (!laserActivo) return;
-    laser.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
-    laser.classList.add('visible');
-    clearTimeout(temporizadorLaser);
-    temporizadorLaser = setTimeout(() => laser.classList.remove('visible'), 4000);
+    px = e.clientX; py = e.clientY;
+    if (!modoPuntero) return;
+    pintarPuntero();
+    if (MODOS[modoPuntero] === 'laser') {
+      laser.classList.add('visible');
+      clearTimeout(temporizadorLaser);
+      temporizadorLaser = setTimeout(() => laser.classList.remove('visible'), 4000);
+    }
   });
+  document.addEventListener('wheel', e => {
+    if (modoPuntero < 2 || menu.contains(e.target)) return;
+    e.preventDefault();
+    radio = Math.min(420, Math.max(70, radio + (e.deltaY < 0 ? 15 : -15)));
+    pintarPuntero();
+  }, { passive: false });
 
   // Ocultar cursor y barra tras unos segundos sin mover el ratón
   let temporizador;
