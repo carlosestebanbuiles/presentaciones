@@ -8,6 +8,14 @@
   html, body { margin: 0; height: 100%; background: #000; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
   #escenario { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; cursor: none; }
   #escenario.activo { cursor: default; }
+  /* Puntero láser virtual (tecla R) */
+  #laser { position: fixed; left: 0; top: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; pointer-events: none; z-index: 6;
+           background: radial-gradient(circle, #fff 0 18%, #ff2a2a 36% 62%, rgba(255,42,42,0) 72%);
+           box-shadow: 0 0 10px 4px rgba(255,30,30,.75), 0 0 26px 10px rgba(255,30,30,.35); opacity: 0; transition: opacity .25s ease; }
+  body.laser #laser.visible { opacity: 1; }
+  body.laser #escenario, body.laser #escenario.activo { cursor: none; }
+  body.laser #capaEnlaces a { pointer-events: none; }
+  #botonLaser[aria-pressed="true"] { background: rgba(255,60,60,.35); }
   .diapo { position: absolute; max-width: 100%; max-height: 100%; width: auto; height: auto; aspect-ratio: 16 / 9; object-fit: contain;
            opacity: 0; transition: opacity .45s ease; user-select: none; -webkit-user-drag: none; }
   .diapo.visible { opacity: 1; }
@@ -63,6 +71,7 @@
 <body>
 <div id="escenario" class="activo"></div>
 <div id="capaEnlaces"></div>
+<div id="laser" aria-hidden="true"></div>
 <div id="listaEnlaces" hidden></div>
 <nav id="menu" aria-label="Diapositivas">
   <div class="cab"><span>Diapositivas</span><button id="cerrarMenu" title="Cerrar (M)">×</button></div>
@@ -73,13 +82,14 @@
   <button id="ant" title="Anterior (←)">◀</button>
   <button id="sig" title="Siguiente (→ o espacio)">▶</button>
   <button id="botonEnlaces" title="Enlaces de esta diapositiva (L)" hidden>🔗 Enlaces</button>
+  <button id="botonLaser" title="Puntero láser (R)" aria-pressed="false">● Láser</button>
   <button id="pantalla" title="Pantalla completa (F)">⛶ Pantalla completa</button>
   <a href="./" title="Volver a la ficha">↩ Ficha</a>
   <a href="../" title="Todas las presentaciones">⌂ Índice</a>
   <span id="contador"></span>
 </div>
 <div id="progreso"></div>
-<div id="ayuda">← → para avanzar · M menú · F pantalla completa · B pantalla en negro</div>
+<div id="ayuda">← → para avanzar · M menú · F pantalla completa · R láser · B pantalla en negro</div>
 
 <script>
 (async () => {
@@ -243,12 +253,14 @@
     else if (e.key === 'F5') { e.preventDefault(); pantallaCompleta(); }
     else if (['.', 'b', 'B'].includes(e.key)) { e.preventDefault(); alternarNegro(); }
     else if (e.key === 'm' || e.key === 'M') { e.preventDefault(); alternarMenu(); }
+    else if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); alternarLaser(); }
     else if ((e.key === 'l' || e.key === 'L') && !botonEnlaces.hidden) { e.preventDefault(); lista2.hidden = !lista2.hidden; }
     else if (e.key === 'Escape' && menu.classList.contains('abierto')) abrirMenu(false);
   });
 
   // Clic: mitad derecha avanza, mitad izquierda retrocede
-  escenario.addEventListener('click', e => (e.clientX > innerWidth / 2 ? siguiente() : anteriorD()));
+  // Con el láser encendido el clic no cambia de diapositiva (se avanza con las flechas o el presentador)
+  escenario.addEventListener('click', e => { if (laserActivo) return; (e.clientX > innerWidth / 2 ? siguiente() : anteriorD()); });
 
   // Deslizar en pantallas táctiles
   let x0 = null;
@@ -257,6 +269,25 @@
     if (x0 === null) return;
     const dx = e.changedTouches[0].clientX - x0; x0 = null;
     if (Math.abs(dx) > 40) (dx < 0 ? siguiente() : anteriorD());
+  });
+
+  // Puntero láser virtual: un punto rojo sigue al ratón; se apaga solo tras unos segundos quieto
+  const laser = document.getElementById('laser');
+  const botonLaser = document.getElementById('botonLaser');
+  let laserActivo = false, temporizadorLaser;
+  function alternarLaser() {
+    laserActivo = !laserActivo;
+    document.body.classList.toggle('laser', laserActivo);
+    botonLaser.setAttribute('aria-pressed', String(laserActivo));
+    if (!laserActivo) laser.classList.remove('visible');
+  }
+  botonLaser.onclick = ev => { ev.stopPropagation(); alternarLaser(); };
+  document.addEventListener('mousemove', e => {
+    if (!laserActivo) return;
+    laser.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    laser.classList.add('visible');
+    clearTimeout(temporizadorLaser);
+    temporizadorLaser = setTimeout(() => laser.classList.remove('visible'), 4000);
   });
 
   // Ocultar cursor y barra tras unos segundos sin mover el ratón

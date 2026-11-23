@@ -34,6 +34,8 @@ En el índice, el botón **Presentar** abre el visor:
 - En cada tarjeta, **Compartir** abre el menú de compartir del celular o, en el computador, copia el enlace de la ficha.
 - En la ficha, **Copiar enlace** copia la dirección de la presentación para compartirla; en celulares y tabletas aparece además **Compartir** (menú del sistema: WhatsApp, correo…).
 - En la portada, el buscador filtra por título, nombre del archivo, categoría, autor y descripción (tecla `/` para enfocarlo).
+- `R` o el botón **● Láser** de la barra inferior: enciende o apaga un puntero láser virtual (un punto rojo que sigue al ratón).
+  Mientras está encendido, el clic no cambia de diapositiva ni abre enlaces; se avanza con las flechas o el presentador de mano.
 - `M` o el botón **☰ Diapositivas** de la barra inferior: abre o cierra el menú lateral con las miniaturas.
   Si la presentación tiene secciones de PowerPoint (clic derecho en el panel de miniaturas > Agregar sección),
   aparecen como encabezados del menú y se puede saltar a cada una. También se pueden definir en
