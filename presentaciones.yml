@@ -92,3 +92,11 @@ Libre2_iCGM_Abbott_2026:
   categoria: Industria farmacéutica / Abbott
   descripcion: Qué significa iCGM, qué no significa y qué evidencia lo respalda. Caja de herramientas de medición, criterios regulatorios, seis dominios de interpretación y uso en la consulta. Charla académica patrocinada por Abbott, Lima, Perú, 2026.
   secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Apertura", desde: 2}, {titulo: "Caja de herramientas", desde: 5}, {titulo: "¿Son todos los CGM iguales?", desde: 12}, {titulo: "Seis dominios", desde: 21}, {titulo: "En la consulta", desde: 26}, {titulo: "Cierre y referencias", desde: 29}]
+
+Rutas_regulatorias_fase2_ronda1:
+  titulo: "Confianza regulatoria en la práctica clínica: resultados de la ronda 1"
+  autor: Carlos Builes
+  fecha: 2026-11-23
+  categoria: Festina Lente / Novo Nordisk
+  descripcion: Reunión presencial del panel clínico (fase 2) sobre rutas de autorización de medicamentos en Colombia, con agonistas GLP-1 como casos trazadores. Resultado agregado de los 45 ítems, una diapositiva por ítem. Material confidencial del panel.
+  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Ítems priorizados", desde: 4}, {titulo: "A. Matriz de traducción", desde: 5}, {titulo: "B. Proposiciones de la fase 1", desde: 30}, {titulo: "C. Viñetas clínicas", desde: 37}, {titulo: "Cierre", desde: 56}]
