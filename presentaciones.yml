@@ -84,3 +84,11 @@ Consenso_calcifediol_2026:
   autor: Carlos Builes
   categoria: Industria farmacéutica / FaesFarma
   descripcion: Cómo se construye un consenso de expertos (RAND/UCLA modificado) y qué concluyó el panel sobre calcifediol frente a colecalciferol en 18 escenarios clínicos. Evento de la Asociación Colombiana de Endocrinología, 2026. Material educativo, no promocional.
+
+Libre2_iCGM_Abbott_2026:
+  titulo: "Libre 2 como iCGM: impacto real en la práctica clínica"
+  autor: Carlos Builes
+  fecha: 2026-11-26
+  categoria: Industria farmacéutica / Abbott
+  descripcion: Qué significa iCGM, qué no significa y qué evidencia lo respalda. Caja de herramientas de medición, criterios regulatorios, seis dominios de interpretación y uso en la consulta. Charla académica patrocinada por Abbott, Lima, Perú, 2026.
+  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Apertura", desde: 2}, {titulo: "Caja de herramientas", desde: 5}, {titulo: "¿Son todos los CGM iguales?", desde: 12}, {titulo: "Seis dominios", desde: 21}, {titulo: "En la consulta", desde: 26}, {titulo: "Cierre y referencias", desde: 29}]
