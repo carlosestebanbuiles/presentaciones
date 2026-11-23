@@ -57,7 +57,8 @@ Evaluacion_CGM_ACE_pagadores:
   titulo: "¿Qué tan confiable es un CGM para cada decisión?"
   autor: Carlos Builes
   categoria: Festina Lente / ACE
-  descripcion: Evaluación clínica de sistemas CGM. Un marco para leer la evidencia antes de decidir cobertura. Presentación para pagadores, Asociación Colombiana de Endocrinología.
+  descripcion: Evaluación clínica de sistemas CGM. Seis dominios, nueve objetos de evaluación y lo que aporta iCGM, para leer la evidencia antes de decidir cobertura. Presentación para pagadores, Asociación Colombiana de Endocrinología.
+  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Introducción", desde: 3}, {titulo: "Caja de herramientas", desde: 6}, {titulo: "La mirada clínica: 6 dominios", desde: 11}, {titulo: "Objetos de evaluación", desde: 18}, {titulo: "Qué trae iCGM", desde: 23}, {titulo: "Cierre y referencias", desde: 27}]
 
 Obesidad_tratamiento_medico_ENDOTOUR_2026:
   titulo: "Tratamiento médico de la obesidad: más allá de los kilos"
