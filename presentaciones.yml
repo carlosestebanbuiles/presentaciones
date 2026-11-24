@@ -47,6 +47,14 @@ Mesa_vitamina_D_2026:
   categoria: Festina Lente / ACE
   descripcion: Mesa de expertos de la Asociación Colombiana de Endocrinología (ACE). Contraste panel–evidencia, mensajes clave y prioridades para educación médica continuada.
 
+Mesa_vitamina_D_2026_cierre:
+  titulo: "Vitamina D más allá del hueso: cierre de la mesa y recomendaciones para el producto"
+  autor: Carlos Builes
+  fecha: 2026-11-23
+  categoria: Festina Lente / ACE
+  descripcion: Resultados de la mesa de expertos de la Asociación Colombiana de Endocrinología (ACE), mensajes del panel y recomendaciones para el equipo comercial. Documento de trabajo, no promocional.
+  secciones: [{titulo: "Resultados", desde: 1}, {titulo: "Bloque transversal", desde: 5}, {titulo: "Ejes temáticos", desde: 8}, {titulo: "Síntesis para el producto", desde: 11}, {titulo: "Uso y cierre", desde: 15}]
+
 Consenso_DM1_ACE_inicio_panel:
   titulo: "Consenso DM1: reunión de inicio del panel"
   autor: Carlos Builes
