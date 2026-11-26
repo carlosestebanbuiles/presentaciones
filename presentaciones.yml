@@ -56,12 +56,12 @@ Mesa_vitamina_D_2026_cierre:
   secciones: [{titulo: "Resultados", desde: 1}, {titulo: "Bloque transversal", desde: 5}, {titulo: "Ejes temáticos", desde: 8}, {titulo: "Síntesis para el producto", desde: 11}, {titulo: "Uso y cierre", desde: 15}]
 
 Consenso_DM1_ACE_inicio_panel:
-  titulo: "Consenso DM1: reunión de inicio del panel"
+  titulo: "Consenso colombiano de expertos en diabetes tipo 1: reunión de inicio del panel"
   autor: Carlos Builes
   fecha: 2026-11-24
   categoria: Festina Lente / ACE
-  descripcion: Tecnología, análogos de insulina y vacunación en adultos con diabetes tipo 1. Alcance, método RAND/UCLA modificado, avance y cronograma. Asociación Colombiana de Endocrinología; protocolo en OSF (doi:10.17605/OSF.IO/2SDZY).
-  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Apertura", desde: 2}, {titulo: "Alcance", desde: 4}, {titulo: "Estructura y método", desde: 7}, {titulo: "Lo que llevamos", desde: 12}, {titulo: "Cronograma", desde: 14}, {titulo: "Cierre", desde: 15}]
+  descripcion: Una iniciativa de la Asociación Colombiana de Endocrinología, Diabetes y Metabolismo. Coordinación científica de Alex Ramírez-Rincón. Alcance, método RAND/UCLA modificado, avance, cronograma, autoría y conflictos de interés. Protocolo en OSF (doi:10.17605/OSF.IO/2SDZY).
+  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Apertura", desde: 2}, {titulo: "Alcance", desde: 4}, {titulo: "Estructura y método", desde: 7}, {titulo: "Lo que llevamos", desde: 12}, {titulo: "Cronograma", desde: 14}, {titulo: "Autoría y conflictos de interés", desde: 15}, {titulo: "Cierre", desde: 18}]
 
 Insulina_hiperglucemia_NPT:
   titulo: Insulina en la hiperglucemia por nutrición parenteral
