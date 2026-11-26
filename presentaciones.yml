@@ -115,6 +115,14 @@ Libre2_iCGM_Abbott_2026:
   descripcion: Qué significa iCGM, qué no significa y qué evidencia lo respalda. Caja de herramientas de medición, criterios regulatorios, seis dominios de interpretación y uso en la consulta. Charla académica patrocinada por Abbott, Lima, Perú, 2026.
   secciones: [{titulo: "Inicio", desde: 1}, {titulo: "Apertura", desde: 2}, {titulo: "Caja de herramientas", desde: 5}, {titulo: "¿Son todos los CGM iguales?", desde: 12}, {titulo: "Seis dominios", desde: 21}, {titulo: "En la consulta", desde: 26}, {titulo: "Cierre y referencias", desde: 29}]
 
+Caso_clinico_CGM_Lima_Abbott_2026:
+  titulo: "Un caso para practicar: elegir y usar un CGM, y qué cambia cuando es iCGM"
+  autor: Carlos Builes
+  fecha: 2026-11-26
+  categoria: Industria farmacéutica / Abbott
+  descripcion: Caso clínico interactivo en siete paradas para practicar los conceptos de medición y de iCGM, con un bloque final de toma de decisiones en la consulta con el lector. Charla académica patrocinada por Abbott, Lima, Perú, 2026.
+  secciones: [{titulo: "Inicio", desde: 1}, {titulo: "El caso", desde: 3}, {titulo: "1. En la farmacia", desde: 4}, {titulo: "2. Los folletos", desde: 6}, {titulo: "3. Antes del almuerzo", desde: 8}, {titulo: "4. La madrugada", desde: 10}, {titulo: "5. El trote", desde: 12}, {titulo: "6. El control", desde: 14}, {titulo: "7. Dos semanas difíciles", desde: 16}, {titulo: "Lo que hizo iCGM", desde: 18}, {titulo: "Decidir con el lector", desde: 20}, {titulo: "Cierre y referencias", desde: 24}]
+
 Rutas_regulatorias_fase2_ronda1:
   titulo: "Confianza regulatoria en la práctica clínica: resultados de la ronda 1"
   autor: Carlos Builes
